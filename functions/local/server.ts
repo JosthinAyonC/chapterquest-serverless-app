@@ -1,6 +1,6 @@
 import express from 'express';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { handler as healthHandler } from '../auth/handlers/health.handler';
+import { handler as healthHandler } from '../auth/handlers/health';
 
 const app = express();
 const PORT = Number(process.env.LOCAL_API_PORT ?? 3001);

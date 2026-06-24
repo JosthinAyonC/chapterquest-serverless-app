@@ -9,7 +9,7 @@ Parameters:
     Type: String
   HealthLambdaS3Key:
     Type: String
-    Default: auth/handlers/health.handler.zip
+    Default: auth/handlers/health.zip
   EnableCustomDomain:
     Type: String
     AllowedValues: ['true', 'false']
@@ -54,7 +54,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Env}-function-health
       Runtime: nodejs22.x
-      Handler: auth/handlers/health.handler.handler
+      Handler: auth/handlers/health.handler
       Role: !GetAtt HealthExecutionRole.Arn
       Timeout: 10
       MemorySize: 128

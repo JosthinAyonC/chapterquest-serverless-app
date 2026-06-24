@@ -22,7 +22,7 @@ function findHandlers() {
     const handlersDir = join(ROOT, dir, 'handlers');
     try {
       for (const file of readdirSync(handlersDir)) {
-        if (file.endsWith('.handler.ts')) {
+        if (file.endsWith('.ts') && !file.endsWith('.test.ts')) {
           handlers.push(join(handlersDir, file));
         }
       }

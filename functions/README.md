@@ -31,7 +31,7 @@ Cada servicio sigue la misma capa:
 ### 1. Crear el handler
 
 ```text
-functions/<service>/handlers/<name>.handler.ts
+functions/<service>/handlers/<name>.ts
 ```
 
 Exporta una función `handler` compatible con API Gateway HTTP API v2.
@@ -43,7 +43,7 @@ Exporta una función `handler` compatible con API Gateway HTTP API v2.
 
 ### 3. Registrar en el build
 
-El script [`functions/scripts/build.mjs`](scripts/build.mjs) detecta automáticamente archivos `*.handler.ts` en cada servicio. No necesitas registrar manualmente si sigues la convención de nombre.
+El script [`functions/scripts/build.mjs`](scripts/build.mjs) detecta automáticamente archivos `*.ts` en cada carpeta `handlers/` (excepto tests). Genera `.js` + `.zip` por handler.
 
 ### 4. Exponer ruta en el servidor local
 
