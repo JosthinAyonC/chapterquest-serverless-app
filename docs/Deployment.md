@@ -1,5 +1,7 @@
 # Deployment — LitCircle (ChapterQuest)
 
+> **¿Primera vez?** Lee [Startup.md](Startup.md) para el checklist completo (bootstrap OIDC, GitHub variables, primer push).
+
 ## Prerrequisitos
 
 - Cuenta AWS con permisos de administrador (solo para bootstrap inicial).

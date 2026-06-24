@@ -86,8 +86,9 @@ Cuando compres **litcircle.com**, activa `EnableCustomDomain=true` en `infrastru
 
 ## Documentación
 
+- **[Startup](docs/Startup.md)** — arranque desde cero, bootstrap OIDC, checklist
 - [Architecture](docs/Architecture.md) — diagramas y diseño de datos
-- [Deployment](docs/Deployment.md) — bootstrap AWS, OIDC, dominio custom
+- [Deployment](docs/Deployment.md) — bootstrap AWS, dominio custom, troubleshooting
 
 ---
 
