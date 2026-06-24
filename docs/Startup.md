@@ -126,7 +126,7 @@ No confundir:
 ### C. GitHub (repo settings)
 
 - [ ] **Environments:** crear `dev` y `prod`
-- [ ] **Repository variables** (o duplicar en cada environment):
+- [ ] **Variables** — repository variables bastan; opcionalmente duplicar en cada environment (`dev`/`prod`) las mismas cuatro:
 
   | Variable | Ejemplo |
   |----------|---------|
@@ -134,6 +134,8 @@ No confundir:
   | `AWS_REGION` | `us-east-1` |
   | `ARTIFACTS_BUCKET` | `chapterquest-artifacts-493297568876` |
   | `VITE_API_BASE_URL` | URL API real (actualizar tras primer deploy) |
+
+  > Si el workflow usa `environment: dev`, el rol IAM debe permitir `repo:…:environment:dev` en el bootstrap (ya incluido en el template).
 
 - [ ] **No** agregar access keys de IAM en Secrets
 
@@ -186,7 +188,10 @@ CloudFormation nested stacks y Lambdas necesitan templates y `.zip`/`.js` en S3.
 Más que access keys estáticas:
 
 - Credenciales **temporales** (minutos/hora)
-- Solo repos/ramas explícitas en la trust policy (`develop`, `master`)
+El rol solo acepta tokens cuyo claim `sub` coincida con el repo y la rama **o** el environment de GitHub:
+
+- `repo:…:ref:refs/heads/develop` / `master`
+- `repo:…:environment:dev` / `prod` ← necesario cuando el workflow usa `environment: dev`
 - Sin secrets de larga vida en GitHub
 
 ### ¿Qué pasa si cambio el nombre del repo?
