@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ChapterQuest root stack — orchestrates nested stacks
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  TemplatesBaseUrl:
+    Type: String
+    Description: S3 base URL for nested stack templates
+  LambdaArtifactsBucket:
+    Type: String
+  EnableCustomDomain:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  DomainName:
+    Type: String
+    Default: litcircle.com
+  HostedZoneId:
+    Type: String
+    Default: ''
+  FrontendOrigin:
+    Type: String
+    Default: https://placeholder.cloudfront.net
+    Description: CORS origin for uploads bucket; update after first deploy
+
+Resources:
+  NetworkingStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplatesBaseUrl}/networking/template.yaml
+      Parameters:
+        Env: !Ref Env
+        EnableCustomDomain: !Ref EnableCustomDomain
+        DomainName: !Ref DomainName
+        HostedZoneId: !Ref HostedZoneId
+
+  StorageStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplatesBaseUrl}/storage/template.yaml
+      Parameters:
+        Env: !Ref Env
+        FrontendOrigin: !Ref FrontendOrigin
+
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplatesBaseUrl}/database/template.yaml
+      Parameters:
+        Env: !Ref Env
+
+  ApiStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - StorageStack
+      - DatabaseStack
+      - NetworkingStack
+    Properties:
+      TemplateURL: !Sub ${TemplatesBaseUrl}/api/template.yaml
+      Parameters:
+        Env: !Ref Env
+        LambdaArtifactsBucket: !Ref LambdaArtifactsBucket
+        EnableCustomDomain: !Ref EnableCustomDomain
+        ApiCertificateArn: !GetAtt NetworkingStack.Outputs.ApiCertificateArn
+        CustomApiDomainHost: !GetAtt NetworkingStack.Outputs.ApiDomainName
+        UsersTableName: !GetAtt DatabaseStack.Outputs.UsersTableName
+        BooksTableName: !GetAtt DatabaseStack.Outputs.BooksTableName
+        ReviewsTableName: !GetAtt DatabaseStack.Outputs.ReviewsTableName
+        CommentsTableName: !GetAtt DatabaseStack.Outputs.CommentsTableName
+        UploadsBucketName: !GetAtt StorageStack.Outputs.UploadsBucketName
+
+  FrontendStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - StorageStack
+      - NetworkingStack
+    Properties:
+      TemplateURL: !Sub ${TemplatesBaseUrl}/frontend/template.yaml
+      Parameters:
+        Env: !Ref Env
+        FrontendBucketName: !GetAtt StorageStack.Outputs.FrontendBucketName
+        EnableCustomDomain: !Ref EnableCustomDomain
+        FrontendCertificateArn: !GetAtt NetworkingStack.Outputs.FrontendCertificateArn
+        FrontendDomainName: !GetAtt NetworkingStack.Outputs.FrontendDomainName
+        HostedZoneId: !Ref HostedZoneId
+
+Outputs:
+  ApiEndpoint:
+    Value: !GetAtt ApiStack.Outputs.ApiEndpoint
+  FrontendUrl:
+    Value: !GetAtt FrontendStack.Outputs.FrontendUrl
+  FrontendBucketName:
+    Value: !GetAtt StorageStack.Outputs.FrontendBucketName
+  CloudFrontDistributionId:
+    Value: !GetAtt FrontendStack.Outputs.CloudFrontDistributionId
+  CloudFrontDomainName:
+    Value: !GetAtt FrontendStack.Outputs.CloudFrontDomainName

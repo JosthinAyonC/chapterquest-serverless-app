@@ -1,0 +1,36 @@
+{
+  "name": "@chapterquest/functions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "tsx watch local/server.ts",
+    "start:local": "tsx local/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest run --watch",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.835.0",
+    "@aws-sdk/lib-dynamodb": "^3.835.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/aws-lambda": "^8.10.150",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.4",
+    "esbuild": "^0.25.5",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.2.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

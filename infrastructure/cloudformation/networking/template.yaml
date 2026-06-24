@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ChapterQuest networking — Route53 and ACM (conditional on custom domain)
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  EnableCustomDomain:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  DomainName:
+    Type: String
+    Default: litcircle.com
+  HostedZoneId:
+    Type: String
+    Default: ''
+
+Conditions:
+  UseCustomDomain: !Equals [!Ref EnableCustomDomain, 'true']
+  IsProd: !Equals [!Ref Env, prod]
+
+Resources:
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: UseCustomDomain
+    Properties:
+      DomainName: !If
+        - IsProd
+        - !Sub api.${DomainName}
+        - !Sub api-${Env}.${DomainName}
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !If
+            - IsProd
+            - !Sub api.${DomainName}
+            - !Sub api-${Env}.${DomainName}
+          HostedZoneId: !Ref HostedZoneId
+
+  FrontendCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: UseCustomDomain
+    Properties:
+      DomainName: !If
+        - IsProd
+        - !Ref DomainName
+        - !Sub ${Env}.${DomainName}
+      SubjectAlternativeNames: !If
+        - IsProd
+        - !Ref AWS::NoValue
+        - [!Sub www.${Env}.${DomainName}]
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !If
+            - IsProd
+            - !Ref DomainName
+            - !Sub ${Env}.${DomainName}
+          HostedZoneId: !Ref HostedZoneId
+
+Outputs:
+  ApiCertificateArn:
+    Value: !If [UseCustomDomain, !Ref ApiCertificate, '']
+  FrontendCertificateArn:
+    Value: !If [UseCustomDomain, !Ref FrontendCertificate, '']
+  ApiDomainName:
+    Value: !If
+      - IsProd
+      - !Sub api.${DomainName}
+      - !Sub api-${Env}.${DomainName}
+  FrontendDomainName:
+    Value: !If
+      - IsProd
+      - !Ref DomainName
+      - !Sub ${Env}.${DomainName}

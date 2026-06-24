@@ -1,0 +1,89 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [develop, master]
+    paths:
+      - 'functions/**'
+      - 'functions/scripts/build.mjs'
+      - 'infrastructure/cloudformation/api/**'
+      - '.github/workflows/backend.yml'
+      - 'pnpm-lock.yaml'
+  pull_request:
+    branches: [develop, master]
+    paths:
+      - 'functions/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.12.1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter @chapterquest/functions lint
+
+      - name: Test
+        run: pnpm --filter @chapterquest/functions test
+
+      - name: Build Lambda bundles
+        run: pnpm --filter @chapterquest/functions build
+
+      - name: Smoke test local API
+        run: |
+          pnpm --filter @chapterquest/functions start:local &
+          SERVER_PID=$!
+          sleep 3
+          curl -sf http://localhost:3001/health | grep -q '"status":"healthy"'
+          kill $SERVER_PID
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy backend stack
+        run: |
+          ENV="${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}"
+          export ARTIFACTS_BUCKET="${{ vars.ARTIFACTS_BUCKET }}"
+          ./scripts/deploy-stack.sh "${ENV}"

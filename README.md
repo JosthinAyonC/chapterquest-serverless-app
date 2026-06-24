@@ -1,211 +1,102 @@
-# 📚 ChapterQuest
+# LitCircle (ChapterQuest)
 
-> Transforming reading into an interactive adventure.
+> **LitCircle** es el producto. **ChapterQuest** es el nombre técnico del repositorio y la plataforma serverless que lo impulsa.
 
-ChapterQuest is a cloud-native, serverless platform designed to encourage reading through community engagement, gamification, and immersive storytelling experiences.
-
-Readers can discover books, upload and read content, write reviews, participate in discussions, create role-playing experiences, and interact with other members in a dynamic literary ecosystem.
+Plataforma de lectura social serverless en AWS. Esta iteración establece la **fundación**: monorepo, IaC, CI/CD, shell de frontend y backend. Las features de negocio llegan en iteraciones siguientes.
 
 ---
 
-## 🌟 Vision
+## MVP (próxima prioridad)
 
-Reading should be more than a solitary activity.
+1. **Invitado sin fricción** — El usuario elige un nombre; se guarda en cookie del navegador con aviso en UI. Se persiste en DynamoDB (`Users`) para validar unicidad ("este nombre ya está en uso").
+2. **Upload de PDF** — Subida vía **presigned URLs** generadas por Lambda (no bucket policy con Referer). CORS restringido al origen del frontend.
+3. **Lectura de PDF** — Visor integrado en el frontend (evaluar librerías en iteración MVP).
+4. **Health check** — `GET /health` operativo (único endpoint implementado hoy).
 
-ChapterQuest aims to build a digital space where stories become shared experiences, allowing readers to:
+### Roadmap posterior
 
-- 📖 Read and explore books and documents
-- ⭐ Write reviews and recommendations
-- 💬 Participate in discussions and comments
-- 🎭 Engage in role-playing and story-driven interactions
-- 🏆 Earn achievements through reading activities
-- 🤝 Connect with a community of readers
-- 📚 Build personal libraries and reading journeys
-
-Our goal is to make reading more social, engaging, and rewarding.
+Reseñas, comentarios, roleplay, progreso de lectura, biblioteca personal, notificaciones.
 
 ---
 
-## 🏗️ Architecture
+## Stack
 
-ChapterQuest follows a fully serverless architecture on AWS, focusing on:
+| Capa | Tecnología |
+|------|------------|
+| Frontend | React, TypeScript, Vite, React Router |
+| Backend | AWS Lambda, API Gateway HTTP API, TypeScript |
+| Datos | DynamoDB, S3 |
+| Infra | CloudFormation (nested stacks) |
+| CI/CD | GitHub Actions + OIDC |
+| Tooling | Node 24, pnpm 10 |
 
-- Scalability
-- Cost efficiency
-- High availability
+---
+
+## Estructura del monorepo
+
+```text
+chapterquest-serverless-app/
+├── frontend/          # App React (LitCircle UI)
+├── functions/         # Lambdas + servidor local Express
+├── infrastructure/    # CloudFormation + parámetros por entorno
+├── scripts/           # Build, deploy
+├── docs/              # Architecture.md, Deployment.md
+└── .github/workflows/ # frontend.yml, backend.yml, infra.yml
+```
+
+Ver [`functions/README.md`](functions/README.md) para agregar nuevas Lambdas.
+
+---
+
+## Requisitos locales
+
+- **Node.js 24** (`nvm use` lee `.nvmrc`)
+- **pnpm 10+** (`corepack enable && corepack prepare pnpm@10.12.1 --activate`)
+- **AWS CLI** configurado (para dev local contra recursos `dev` en la nube)
+
+```bash
+pnpm install
+pnpm dev:frontend    # http://localhost:5173
+pnpm dev:api         # http://localhost:3001
+```
+
+---
+
+## Entornos
+
+| Rama | Entorno AWS | URLs (sin dominio custom) |
+|------|-------------|---------------------------|
+| `develop` | dev | CloudFront `*.cloudfront.net`, API Gateway default |
+| `master` | prod | Idem |
+
+Cuando compres **litcircle.com**, activa `EnableCustomDomain=true` en `infrastructure/environments/*/params.env` y configura `HostedZoneId`. CloudFormation creará certificados ACM y registros Route53 automáticamente:
+
+- `dev.litcircle.com` / `api-dev.litcircle.com`
+- `litcircle.com` / `api.litcircle.com`
+
+---
+
+## Convención de nombres
+
+- Stacks: `chapterquest-root-{env}`, `chapterquest-api-{env}`, etc.
+- Lambdas: `{env}-function-{name}`
+- Tablas DynamoDB: `{env}-chapterquest-{table}`
+
+---
+
+## Documentación
+
+- [Architecture](docs/Architecture.md) — diagramas y diseño de datos
+- [Deployment](docs/Deployment.md) — bootstrap AWS, OIDC, dominio custom
+
+---
+
+## Principios de diseño
+
+- Serverless first
 - Infrastructure as Code
-- Automated deployments
+- Deploy solo vía GitHub Actions (OIDC, sin access keys de larga vida)
+- Least privilege IAM (rol de ejecución por Lambda)
+- Sin lógica de negocio en esta iteración — solo fundación sólida
 
-### High-Level Architecture
-
-```text
-Users
-  │
-  ▼
-Frontend (Web Application)
-  │
-  ▼
-Amazon API Gateway
-  │
-  ▼
-AWS Lambda Functions
-  │
-  ├── Amazon DynamoDB
-  ├── Amazon S3
-  └── Other AWS Services
-```
-
----
-
-## ☁️ Technology Stack
-
-### Infrastructure
-
-- AWS CloudFormation
-- Infrastructure as Code (IaC)
-- Multi-environment deployments
-
-### Backend
-
-- AWS Lambda
-- Amazon API Gateway
-- Event-driven architecture
-- REST APIs
-
-### Storage
-
-- Amazon DynamoDB
-- Amazon S3
-
-### CI/CD
-
-- GitHub Actions
-- Automated testing
-- Automated deployments
-- Environment promotion workflows
-
-### Security
-
-- IAM Roles and Policies
-- Least-Privilege Access
-- Secure Secrets Management
-- HTTPS APIs
-
----
-
-## 🚀 Core Features
-
-### Reading Experience
-
-- Digital document access
-- PDF reading support
-- Personal reading library
-- Reading progress tracking
-
-### Community Features
-
-- User profiles
-- Reviews and ratings
-- Comments and discussions
-- Community engagement
-
-### Interactive Storytelling
-
-- Role-playing experiences
-- Story-driven interactions
-- Collaborative literary activities
-
-### Content Management
-
-- Document uploads
-- Content moderation
-- Metadata management
-- Categorization and search
-
----
-
-## 📂 Repository Structure
-
-```text
-chapterquest-platform/
-│
-├── frontend/
-│   └── Web application
-│
-├── infrastructure/
-│   ├── cloudformation/
-│   └── environments/
-│
-├── services/
-│   ├── auth/
-│   ├── books/
-│   ├── reviews/
-│   ├── comments/
-│   ├── users/
-│   └── roleplay/
-│
-├── .github/
-│   └── workflows/
-│
-├── docs/
-│
-└── README.md
-```
-
----
-
-## 🌍 Environments
-
-The platform is designed around isolated deployment environments:
-
-```text
-Development
-Staging
-Production
-```
-
-Example stack naming:
-
-```text
-chapterquest-api-dev
-chapterquest-api-staging
-chapterquest-api-prod
-
-chapterquest-data-dev
-chapterquest-data-staging
-chapterquest-data-prod
-
-chapterquest-web-dev
-chapterquest-web-staging
-chapterquest-web-prod
-```
-
----
-
-## 🎯 Design Principles
-
-- Serverless First
-- Infrastructure as Code
-- Automation Everywhere
-- Security by Design
-- Event-Driven Architecture
-- Cost Optimization
-- Community-Centric Product Development
-
----
-
-## 🔮 Future Roadmap
-
-- Reading achievements and badges
-- Recommendation engine
-- Social reading groups
-- AI-assisted reading experiences
-- Interactive book quests
-- Real-time notifications
-- Mobile application
-- Content creator tools
-
----
-
-
-**ChapterQuest** — *Every chapter is the beginning of a new adventure.*
+**LitCircle** — *Every chapter is the beginning of a new adventure.*

@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ChapterQuest API — HTTP API Gateway and Lambda functions
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  LambdaArtifactsBucket:
+    Type: String
+  HealthLambdaS3Key:
+    Type: String
+    Default: auth/handlers/health.handler.js
+  EnableCustomDomain:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Default: 'false'
+  ApiCertificateArn:
+    Type: String
+    Default: ''
+  CustomApiDomainHost:
+    Type: String
+    Default: ''
+  UsersTableName:
+    Type: String
+  BooksTableName:
+    Type: String
+  ReviewsTableName:
+    Type: String
+  CommentsTableName:
+    Type: String
+  UploadsBucketName:
+    Type: String
+
+Conditions:
+  UseCustomDomain: !Equals [!Ref EnableCustomDomain, 'true']
+
+Resources:
+  HealthExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Env}-role-function-health
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  HealthFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${Env}-function-health
+      Runtime: nodejs22.x
+      Handler: auth/handlers/health.handler.handler
+      Role: !GetAtt HealthExecutionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          ENV: !Ref Env
+          USERS_TABLE: !Ref UsersTableName
+          BOOKS_TABLE: !Ref BooksTableName
+          REVIEWS_TABLE: !Ref ReviewsTableName
+          COMMENTS_TABLE: !Ref CommentsTableName
+          UPLOADS_BUCKET: !Ref UploadsBucketName
+      Code:
+        S3Bucket: !Ref LambdaArtifactsBucket
+        S3Key: !Sub ${Env}/lambdas/${HealthLambdaS3Key}
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${Env}-chapterquest-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins: ['*']
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        AllowHeaders: ['*']
+
+  HealthIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt HealthFunction.Arn
+      PayloadFormatVersion: '2.0'
+
+  HealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /health
+      Target: !Sub integrations/${HealthIntegration}
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: !Ref Env
+      AutoDeploy: true
+
+  HealthLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref HealthFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*/*
+
+  ApiCustomDomain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Condition: UseCustomDomain
+    Properties:
+      DomainName: !Ref CustomApiDomainHost
+      DomainNameConfigurations:
+        - CertificateArn: !Ref ApiCertificateArn
+          EndpointType: REGIONAL
+
+  ApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Condition: UseCustomDomain
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref ApiCustomDomain
+      Stage: !Ref ApiStage
+
+Outputs:
+  ApiEndpoint:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Env}
+    Export:
+      Name: !Sub ${Env}-chapterquest-api-endpoint
+  HttpApiId:
+    Value: !Ref HttpApi
+  HealthFunctionArn:
+    Value: !GetAtt HealthFunction.Arn

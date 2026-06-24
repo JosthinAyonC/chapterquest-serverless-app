@@ -1,0 +1,94 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [develop, master]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend.yml'
+      - 'pnpm-lock.yaml'
+  pull_request:
+    branches: [develop, master]
+    paths:
+      - 'frontend/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.12.1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter @chapterquest/frontend lint
+
+      - name: Test
+        run: pnpm --filter @chapterquest/frontend test
+
+      - name: Build
+        run: pnpm --filter @chapterquest/frontend build
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter @chapterquest/frontend build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy to S3 and invalidate CloudFront
+        run: |
+          ENV="${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}"
+          FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "chapterquest-root-${ENV}" \
+            --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \
+            --output text)
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name "chapterquest-root-${ENV}" \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text)
+          aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}/" --delete
+          aws cloudfront create-invalidation \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --paths "/*"

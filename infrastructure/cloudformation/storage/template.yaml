@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ChapterQuest storage — S3 frontend hosting and document uploads
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, prod]
+  FrontendOrigin:
+    Type: String
+    Description: Allowed CORS origin for uploads bucket (CloudFront URL or custom domain)
+
+Resources:
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Env}-chapterquest-frontend
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Env}-chapterquest-uploads
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, HEAD]
+            AllowedOrigins:
+              - !Ref FrontendOrigin
+            MaxAge: 3600
+
+Outputs:
+  FrontendBucketName:
+    Value: !Ref FrontendBucket
+    Export:
+      Name: !Sub ${Env}-chapterquest-frontend-bucket
+  FrontendBucketArn:
+    Value: !GetAtt FrontendBucket.Arn
+    Export:
+      Name: !Sub ${Env}-chapterquest-frontend-bucket-arn
+  UploadsBucketName:
+    Value: !Ref UploadsBucket
+    Export:
+      Name: !Sub ${Env}-chapterquest-uploads-bucket
+  UploadsBucketArn:
+    Value: !GetAtt UploadsBucket.Arn
+    Export:
+      Name: !Sub ${Env}-chapterquest-uploads-bucket-arn

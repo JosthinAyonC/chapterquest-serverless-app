@@ -1,0 +1,107 @@
+# Functions — Guía para agregar una nueva Lambda
+
+Este directorio contiene las funciones Lambda de **ChapterQuest** (producto: **LitCircle**), organizadas por dominio.
+
+## Estructura por servicio
+
+```text
+functions/
+├── common/           # Utilidades compartidas (http, logger, dynamo, models)
+├── auth/             # Health check y futura autenticación
+├── users/            # Perfiles de invitado
+├── books/            # Libros y PDFs
+├── reviews/
+├── comments/
+├── roleplay/
+└── local/            # Servidor Express para desarrollo local
+```
+
+Cada servicio sigue la misma capa:
+
+```text
+<service>/
+├── handlers/     # Entry points Lambda (thin)
+├── services/     # Lógica de negocio
+├── repositories/ # Acceso a DynamoDB / S3
+└── models/       # Tipos del dominio (opcional si usa common/models)
+```
+
+## Checklist: agregar una nueva Lambda
+
+### 1. Crear el handler
+
+```text
+functions/<service>/handlers/<name>.handler.ts
+```
+
+Exporta una función `handler` compatible con API Gateway HTTP API v2.
+
+### 2. Implementar service y repository
+
+- **Service**: reglas de negocio, sin dependencias de AWS SDK directas.
+- **Repository**: lectura/escritura en DynamoDB o S3.
+
+### 3. Registrar en el build
+
+El script [`functions/scripts/build.mjs`](scripts/build.mjs) detecta automáticamente archivos `*.handler.ts` en cada servicio. No necesitas registrar manualmente si sigues la convención de nombre.
+
+### 4. Exponer ruta en el servidor local
+
+Edita [`local/server.ts`](local/server.ts) y monta la ruta Express que invoque tu handler.
+
+### 5. Agregar recurso en CloudFormation
+
+Edita [`infrastructure/cloudformation/api/template.yaml`](../infrastructure/cloudformation/api/template.yaml):
+
+1. Crear **Execution Role** dedicado (`<env>-role-function-<name>`).
+2. Crear **Lambda Function** (`<env>-function-<name>`).
+3. Crear **Integration** + **Route** en HTTP API.
+4. Agregar **Lambda Permission**.
+
+Principio: **un rol por función** (least privilege).
+
+### 6. Desplegar
+
+El pipeline [`backend.yml`](../.github/workflows/backend.yml) compila con esbuild, sube artefactos a S3 y despliega el stack. Solo GitHub Actions despliega a AWS.
+
+## Desarrollo local
+
+Requisitos: Node 24, pnpm, AWS CLI configurado con acceso al entorno `dev`.
+
+```bash
+# Desde la raíz del monorepo
+pnpm install
+pnpm dev:api          # Express en http://localhost:3001
+curl http://localhost:3001/health
+```
+
+Variables de entorno útiles:
+
+| Variable | Default | Descripción |
+|----------|---------|-------------|
+| `ENV` | `dev` | Prefijo de tablas y recursos |
+| `AWS_REGION` | `us-east-1` | Región AWS |
+| `LOCAL_API_PORT` | `3001` | Puerto del servidor local |
+
+El AWS SDK usa la **credential chain** del CLI (`aws configure`, SSO, etc.). En Lambda usa el execution role.
+
+## Convención de nombres
+
+| Recurso | Patrón | Ejemplo |
+|---------|--------|---------|
+| Lambda | `{env}-function-{name}` | `dev-function-health` |
+| IAM Role | `{env}-role-function-{name}` | `dev-role-function-health` |
+| DynamoDB | `{env}-chapterquest-{table}` | `dev-chapterquest-users` |
+| S3 | `{env}-chapterquest-{purpose}` | `dev-chapterquest-uploads` |
+
+## Runtime
+
+- **Local / CI**: Node 24 (`.nvmrc`, `engines` en package.json).
+- **Lambda en AWS**: `nodejs22.x` (runtime más reciente disponible en Lambda; se actualizará cuando AWS publique Node 24).
+
+## Endpoint actual
+
+```
+GET /health
+→ { "service": "chapterquest-api", "status": "healthy" }
+```
