@@ -9,7 +9,7 @@ Parameters:
     Type: String
   HealthLambdaS3Key:
     Type: String
-    Default: auth/handlers/health.handler.js
+    Default: auth/handlers/health.handler.zip
   EnableCustomDomain:
     Type: String
     AllowedValues: ['true', 'false']

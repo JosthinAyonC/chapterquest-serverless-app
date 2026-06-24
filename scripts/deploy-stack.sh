@@ -27,9 +27,11 @@ aws s3 sync "${ROOT_DIR}/infrastructure/cloudformation/" \
   --exclude "*/.git/*" \
   --delete
 
-echo "==> Uploading Lambda artifacts"
+echo "==> Uploading Lambda artifacts (zip packages)"
 aws s3 sync "${ROOT_DIR}/functions/dist/" \
   "s3://${ARTIFACTS_BUCKET}/${ENV}/lambdas/" \
+  --exclude "*" \
+  --include "*.zip" \
   --delete
 
 echo "==> Deploying ${STACK_NAME}"

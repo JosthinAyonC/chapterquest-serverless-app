@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import { execSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,7 +57,13 @@ async function build() {
 
   for (const handler of handlers) {
     const rel = relative(ROOT, handler).replace(/\.ts$/, '.js');
+    const zipRel = rel.replace(/\.js$/, '.zip');
+    execSync(`zip -q "${zipRel}" "${rel}"`, {
+      cwd: OUT_DIR,
+      stdio: 'inherit',
+    });
     console.log(`  ✓ ${rel}`);
+    console.log(`  ✓ ${zipRel}`);
   }
 }
 
