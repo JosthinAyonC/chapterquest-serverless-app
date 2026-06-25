@@ -16,7 +16,7 @@
 | `develop` | dev | `chapterquest-root-dev` |
 | `master` | prod | `chapterquest-root-prod` |
 
-**Única fuente de deploy:** GitHub Actions (workflows `frontend.yml`, `backend.yml`, `infra.yml`).
+**Única fuente de deploy:** GitHub Actions (workflow [`ci-cd.yml`](../.github/workflows/ci-cd.yml)).
 
 ---
 
@@ -71,7 +71,7 @@ git push -u origin develop
 
 ## Paso 4: Primer deploy de infraestructura
 
-Opción A — push a `dev` (dispara `infra.yml` + `backend.yml`).
+Opción A — push a `develop` (dispara `ci-cd.yml` en secuencia).
 
 Opción B — manual desde tu máquina:
 
@@ -98,7 +98,7 @@ Actualiza `FrontendOrigin` en `infrastructure/environments/dev/params.env` con l
 
 ## Paso 5: Deploy del frontend
 
-Automático al push en `dev`/`main` vía `frontend.yml`.
+Automático al push en `develop`/`master` vía `ci-cd.yml` (job `deploy-frontend`).
 
 Manual:
 

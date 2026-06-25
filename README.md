@@ -41,7 +41,7 @@ chapterquest-serverless-app/
 ├── infrastructure/    # CloudFormation + parámetros por entorno
 ├── scripts/           # Build, deploy
 ├── docs/              # Architecture.md, Deployment.md
-└── .github/workflows/ # frontend.yml, backend.yml, infra.yml
+└── .github/workflows/ # ci-cd.yml (único pipeline)
 ```
 
 Ver [`functions/README.md`](functions/README.md) para agregar nuevas Lambdas.

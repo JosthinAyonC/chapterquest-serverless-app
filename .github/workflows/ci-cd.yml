@@ -1,0 +1,149 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment (only for manual deploy)
+        required: false
+        type: choice
+        options: [dev, prod]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.12.1'
+  AWS_REGION: us-east-1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: API smoke tests (local server)
+        run: chmod +x scripts/smoke-api.sh && ./scripts/smoke-api.sh
+
+  deploy-stack:
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
+    concurrency:
+      group: chapterquest-deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+
+      - name: Validate CloudFormation templates
+        run: |
+          for template in infrastructure/cloudformation/*/template.yaml; do
+            echo "Validating ${template}"
+            aws cloudformation validate-template --template-body "file://${template}"
+          done
+
+      - name: Deploy infrastructure + backend (CloudFormation)
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ inputs.environment }}"
+          else
+            ENV="${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}"
+          fi
+          export ARTIFACTS_BUCKET="${{ vars.ARTIFACTS_BUCKET }}"
+          chmod +x scripts/deploy-stack.sh
+          ./scripts/deploy-stack.sh "${ENV}"
+
+  deploy-frontend:
+    needs: deploy-stack
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter @chapterquest/frontend build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+
+      - name: Deploy frontend to S3 + CloudFront
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ inputs.environment }}"
+          else
+            ENV="${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}"
+          fi
+          FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name "chapterquest-root-${ENV}" \
+            --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \
+            --output text)
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name "chapterquest-root-${ENV}" \
+            --query "Stacks[0].Outputs[?OutputKey=='CloudFrontDistributionId'].OutputValue" \
+            --output text)
+          aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}/" --delete
+          aws cloudfront create-invalidation \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --paths "/*"

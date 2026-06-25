@@ -62,7 +62,7 @@ Principio: **un rol por función** (least privilege).
 
 ### 6. Desplegar
 
-El pipeline [`backend.yml`](../.github/workflows/backend.yml) compila con esbuild, sube artefactos a S3 y despliega el stack. Solo GitHub Actions despliega a AWS.
+El pipeline [`ci-cd.yml`](../.github/workflows/ci-cd.yml) compila con esbuild, despliega el stack y luego el frontend. Solo GitHub Actions despliega a AWS.
 
 ## Desarrollo local
 
