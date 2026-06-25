@@ -31,7 +31,7 @@ Cada servicio sigue la misma capa:
 ### 1. Crear el handler
 
 ```text
-functions/<service>/handlers/<name>.handler.ts
+functions/<service>/handlers/<name>.ts
 ```
 
 Exporta una función `handler` compatible con API Gateway HTTP API v2.
@@ -43,7 +43,7 @@ Exporta una función `handler` compatible con API Gateway HTTP API v2.
 
 ### 3. Registrar en el build
 
-El script [`functions/scripts/build.mjs`](scripts/build.mjs) detecta automáticamente archivos `*.handler.ts` en cada servicio. No necesitas registrar manualmente si sigues la convención de nombre.
+El script [`functions/scripts/build.mjs`](scripts/build.mjs) detecta automáticamente archivos `*.ts` en cada carpeta `handlers/` (excepto tests). Genera `.js` + `.zip` por handler.
 
 ### 4. Exponer ruta en el servidor local
 
@@ -62,7 +62,7 @@ Principio: **un rol por función** (least privilege).
 
 ### 6. Desplegar
 
-El pipeline [`backend.yml`](../.github/workflows/backend.yml) compila con esbuild, sube artefactos a S3 y despliega el stack. Solo GitHub Actions despliega a AWS.
+El pipeline [`ci-cd.yml`](../.github/workflows/ci-cd.yml) compila con esbuild, despliega el stack y luego el frontend. Solo GitHub Actions despliega a AWS.
 
 ## Desarrollo local
 
@@ -80,10 +80,11 @@ Variables de entorno útiles:
 | Variable | Default | Descripción |
 |----------|---------|-------------|
 | `ENV` | `dev` | Prefijo de tablas y recursos |
+| `AWS_PROFILE` | *(ninguno)* | Perfil CLI — define en `functions/.env` (ej. `litcircle`) |
 | `AWS_REGION` | `us-east-1` | Región AWS |
 | `LOCAL_API_PORT` | `3001` | Puerto del servidor local |
 
-El AWS SDK usa la **credential chain** del CLI (`aws configure`, SSO, etc.). En Lambda usa el execution role.
+Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de registrar invitados. `/health` no necesita AWS; `/users/guest` escribe en DynamoDB remoto (`dev-chapterquest-users`).
 
 ## Convención de nombres
 

@@ -1,9 +1,37 @@
+import { existsSync } from 'node:fs';
+import { loadEnvFile } from 'node:process';
+import { resolve } from 'node:path';
 import express from 'express';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { handler as healthHandler } from '../auth/handlers/health.handler';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
+import { handler as healthHandler } from '../auth/handlers/health';
+import { handler as guestHandler } from '../users/handlers/guest';
+import { docClient, tableName } from '../common/dynamo';
+
+const envFile = resolve(import.meta.dirname, '../.env');
+if (existsSync(envFile)) {
+  loadEnvFile(envFile);
+}
 
 const app = express();
 const PORT = Number(process.env.LOCAL_API_PORT ?? 3001);
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': '*',
+} as const;
+
+app.use((req, res, next) => {
+  for (const [key, value] of Object.entries(CORS_HEADERS)) {
+    res.setHeader(key, value);
+  }
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 
 app.use(express.json());
 
@@ -33,7 +61,7 @@ function toApiGatewayEvent(
         method: req.method,
         path: req.path,
         protocol: 'HTTP/1.1',
-        sourceIp: req.ip,
+        sourceIp: req.ip ?? '',
         userAgent: req.get('user-agent') ?? '',
       },
       requestId: `local-${Date.now()}`,
@@ -76,10 +104,46 @@ async function invokeHandler(
 }
 
 app.get('/health', (req, res) => invokeHandler(req, res, healthHandler));
+app.post('/users/guest', (req, res) => invokeHandler(req, res, guestHandler));
+
+async function verifyAwsAccess(): Promise<void> {
+  const profile = process.env.AWS_PROFILE ?? '(default credential chain)';
+  const region = process.env.AWS_REGION ?? 'us-east-1';
+  const usersTable = tableName('users');
+
+  try {
+    await docClient.send(
+      new GetCommand({
+        TableName: usersTable,
+        Key: { pk: 'USER#__startup_probe__', sk: 'PROFILE' },
+      }),
+    );
+    console.log(`AWS OK — ${usersTable} (${profile}, ${region})`);
+  } catch (error) {
+    const name = error instanceof Error ? error.name : 'UnknownError';
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (name === 'CredentialsProviderError') {
+      console.error('[LitCircle local API] Sin credenciales AWS.');
+      console.error('  Copia functions/.env.example → functions/.env');
+      console.error('  Ajusta AWS_PROFILE (ej. litcircle) y reinicia pnpm dev:api');
+      console.error(`  Detalle: ${message}`);
+      return;
+    }
+
+    if (name === 'ResourceNotFoundException') {
+      console.error(`[LitCircle local API] Tabla ${usersTable} no existe en ${region}.`);
+      console.error('  Despliega el stack dev o revisa ENV en functions/.env');
+      return;
+    }
+
+    console.error('[LitCircle local API] Error al verificar DynamoDB:', message);
+  }
+}
 
 app.listen(PORT, () => {
   console.log(
     `[LitCircle local API] http://localhost:${PORT} (ENV=${process.env.ENV ?? 'dev'})`,
   );
-  console.log('Using AWS credential chain from CLI profile.');
+  void verifyAwsAccess();
 });

@@ -1,5 +1,7 @@
 # Deployment — LitCircle (ChapterQuest)
 
+> **¿Primera vez?** Lee [Startup.md](Startup.md) para el checklist completo (bootstrap OIDC, GitHub variables, primer push).
+
 ## Prerrequisitos
 
 - Cuenta AWS con permisos de administrador (solo para bootstrap inicial).
@@ -14,7 +16,7 @@
 | `develop` | dev | `chapterquest-root-dev` |
 | `master` | prod | `chapterquest-root-prod` |
 
-**Única fuente de deploy:** GitHub Actions (workflows `frontend.yml`, `backend.yml`, `infra.yml`).
+**Única fuente de deploy:** GitHub Actions (workflow [`ci-cd.yml`](../.github/workflows/ci-cd.yml)).
 
 ---
 
@@ -52,7 +54,7 @@ En el repositorio de GitHub, configura **Variables** (Settings → Secrets and v
 | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::123456789012:role/chapterquest-github-deploy-...` | Output del bootstrap |
 | `AWS_REGION` | `us-east-1` | Región de deploy |
 | `ARTIFACTS_BUCKET` | `chapterquest-artifacts-123456789012` | Bucket de artefactos |
-| `VITE_API_BASE_URL` | `https://abc123.execute-api.us-east-1.amazonaws.com/dev` | URL API (actualizar tras primer deploy) |
+| `VITE_API_BASE_URL` | *(opcional)* | Ya no es obligatoria: CI y `deploy-frontend.sh` leen `ApiEndpoint` del stack automáticamente. Úsala solo para override manual. |
 
 Crea **Environments** `dev` y `prod` si quieres protecciones de deploy en prod.
 
@@ -69,7 +71,7 @@ git push -u origin develop
 
 ## Paso 4: Primer deploy de infraestructura
 
-Opción A — push a `dev` (dispara `infra.yml` + `backend.yml`).
+Opción A — push a `develop` (dispara `ci-cd.yml` en secuencia).
 
 Opción B — manual desde tu máquina:
 
@@ -96,7 +98,7 @@ Actualiza `FrontendOrigin` en `infrastructure/environments/dev/params.env` con l
 
 ## Paso 5: Deploy del frontend
 
-Automático al push en `dev`/`main` vía `frontend.yml`.
+Automático al push en `develop`/`master` vía `ci-cd.yml` (job `deploy-frontend`).
 
 Manual:
 

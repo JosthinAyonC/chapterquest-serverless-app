@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useGuestUser } from '../context/GuestUserContext';
+import { useGuestUser } from '../context/useGuestUser';
 
 const navItems = [
   { to: '/', label: 'Inicio', end: true },

@@ -48,7 +48,7 @@ Resources:
       SubjectAlternativeNames: !If
         - IsProd
         - !Ref AWS::NoValue
-        - [!Sub www.${Env}.${DomainName}]
+        - - !Sub www.${Env}.${DomainName}
       ValidationMethod: DNS
       DomainValidationOptions:
         - DomainName: !If
@@ -59,9 +59,15 @@ Resources:
 
 Outputs:
   ApiCertificateArn:
-    Value: !If [UseCustomDomain, !Ref ApiCertificate, '']
+    Value: !If
+      - UseCustomDomain
+      - !Ref ApiCertificate
+      - ''
   FrontendCertificateArn:
-    Value: !If [UseCustomDomain, !Ref FrontendCertificate, '']
+    Value: !If
+      - UseCustomDomain
+      - !Ref FrontendCertificate
+      - ''
   ApiDomainName:
     Value: !If
       - IsProd
