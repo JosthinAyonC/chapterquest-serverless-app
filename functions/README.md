@@ -80,10 +80,11 @@ Variables de entorno útiles:
 | Variable | Default | Descripción |
 |----------|---------|-------------|
 | `ENV` | `dev` | Prefijo de tablas y recursos |
+| `AWS_PROFILE` | *(ninguno)* | Perfil CLI — define en `functions/.env` (ej. `litcircle`) |
 | `AWS_REGION` | `us-east-1` | Región AWS |
 | `LOCAL_API_PORT` | `3001` | Puerto del servidor local |
 
-El AWS SDK usa la **credential chain** del CLI (`aws configure`, SSO, etc.). En Lambda usa el execution role.
+Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de registrar invitados. `/health` no necesita AWS; `/users/guest` escribe en DynamoDB remoto (`dev-chapterquest-users`).
 
 ## Convención de nombres
 
