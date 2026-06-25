@@ -25,8 +25,8 @@ API_URL="${VITE_API_BASE_URL:-$(aws cloudformation describe-stacks \
   --output text \
   --region "${AWS_REGION}")}"
 
-echo "==> Building frontend (VITE_API_BASE_URL=${API_URL})"
-VITE_API_BASE_URL="${API_URL}" pnpm --filter @chapterquest/frontend build
+echo "==> Building frontend (VITE_API_BASE_URL=${API_URL}, VITE_APP_ENV=${ENV})"
+VITE_API_BASE_URL="${API_URL}" VITE_APP_ENV="${ENV}" pnpm --filter @chapterquest/frontend build
 
 echo "==> Syncing to s3://${FRONTEND_BUCKET}"
 aws s3 sync "${ROOT_DIR}/frontend/dist/" "s3://${FRONTEND_BUCKET}/" --delete

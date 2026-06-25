@@ -226,6 +226,7 @@ jobs:
         run: pnpm --filter @chapterquest/frontend build
         env:
           VITE_API_BASE_URL: ${{ steps.stack.outputs.api_url }}
+          VITE_APP_ENV: ${{ steps.stack.outputs.env == 'prod' && 'prod' || 'dev' }}
 
       - name: Deploy frontend to S3 + CloudFront
         run: |

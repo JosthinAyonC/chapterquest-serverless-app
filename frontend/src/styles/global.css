@@ -82,6 +82,13 @@ img {
   min-height: var(--header-height);
 }
 
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
 .brand {
   display: flex;
   align-items: center;
