@@ -12,6 +12,12 @@ on:
         required: false
         type: choice
         options: [dev, prod]
+      deploy_target:
+        description: What to deploy (auto = detect from last commit)
+        required: false
+        type: choice
+        default: auto
+        options: [auto, stack, frontend, all]
 
 permissions:
   id-token: write
@@ -26,13 +32,13 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -52,22 +58,94 @@ jobs:
       - name: API smoke tests (local server)
         run: chmod +x scripts/smoke-api.sh && ./scripts/smoke-api.sh
 
-  deploy-stack:
-    needs: validate
+  detect-changes:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      stack: ${{ steps.changes.outputs.stack }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        id: changes
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ inputs.deploy_target }}" in
+              stack)
+                echo "stack=true" >> "$GITHUB_OUTPUT"
+                echo "frontend=false" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              frontend)
+                echo "stack=false" >> "$GITHUB_OUTPUT"
+                echo "frontend=true" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+              all)
+                echo "stack=true" >> "$GITHUB_OUTPUT"
+                echo "frontend=true" >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          fi
+
+          BASE="${{ github.event.before }}"
+          HEAD="${{ github.sha }}"
+
+          if [[ "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+            echo "stack=true" >> "$GITHUB_OUTPUT"
+            echo "frontend=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          stack=false
+          frontend=false
+
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              functions/*|infrastructure/*|scripts/deploy-stack.sh|scripts/smoke-api.sh)
+                stack=true
+                ;;
+              frontend/*)
+                frontend=true
+                ;;
+              pnpm-lock.yaml|package.json|pnpm-workspace.yaml|.github/workflows/ci-cd.yml)
+                stack=true
+                frontend=true
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE" "$HEAD")
+
+          echo "stack=$stack" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "Stack changes: $stack"
+          echo "Frontend changes: $frontend"
+
+  deploy-stack:
+    needs: [validate, detect-changes]
+    if: |
+      needs.validate.result == 'success' &&
+      needs.detect-changes.outputs.stack == 'true' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
     concurrency:
       group: chapterquest-deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -75,7 +153,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
@@ -99,18 +177,23 @@ jobs:
           ./scripts/deploy-stack.sh "${ENV}"
 
   deploy-frontend:
-    needs: deploy-stack
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [validate, detect-changes, deploy-stack]
+    if: |
+      always() &&
+      needs.validate.result == 'success' &&
+      needs.detect-changes.outputs.frontend == 'true' &&
+      (needs.deploy-stack.result == 'success' || needs.deploy-stack.result == 'skipped') &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref == 'refs/heads/master' && 'prod' || 'dev') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
@@ -118,7 +201,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
@@ -159,3 +242,19 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id "${DISTRIBUTION_ID}" \
             --paths "/*"
+
+  deploy-summary:
+    needs: [detect-changes, deploy-stack, deploy-frontend]
+    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write deploy summary
+        run: |
+          {
+            echo "## Deploy summary"
+            echo
+            echo "| Component | Changes detected | Job result |"
+            echo "|-----------|------------------|------------|"
+            echo "| Stack | \`${{ needs.detect-changes.outputs.stack }}\` | \`${{ needs.deploy-stack.result }}\` |"
+            echo "| Frontend | \`${{ needs.detect-changes.outputs.frontend }}\` | \`${{ needs.deploy-frontend.result }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
