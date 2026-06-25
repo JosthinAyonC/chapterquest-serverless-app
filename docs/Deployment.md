@@ -54,7 +54,7 @@ En el repositorio de GitHub, configura **Variables** (Settings → Secrets and v
 | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::123456789012:role/chapterquest-github-deploy-...` | Output del bootstrap |
 | `AWS_REGION` | `us-east-1` | Región de deploy |
 | `ARTIFACTS_BUCKET` | `chapterquest-artifacts-123456789012` | Bucket de artefactos |
-| `VITE_API_BASE_URL` | `https://abc123.execute-api.us-east-1.amazonaws.com/dev` | URL API (actualizar tras primer deploy) |
+| `VITE_API_BASE_URL` | *(opcional)* | Ya no es obligatoria: CI y `deploy-frontend.sh` leen `ApiEndpoint` del stack automáticamente. Úsala solo para override manual. |
 
 Crea **Environments** `dev` y `prod` si quieres protecciones de deploy en prod.
 

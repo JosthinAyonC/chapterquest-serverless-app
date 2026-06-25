@@ -118,23 +118,35 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build frontend
-        run: pnpm --filter @chapterquest/frontend build
-        env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
 
-      - name: Deploy frontend to S3 + CloudFront
+      - name: Resolve stack outputs
+        id: stack
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             ENV="${{ inputs.environment }}"
           else
             ENV="${{ github.ref == 'refs/heads/master' && 'prod' || 'dev' }}"
           fi
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name "chapterquest-root-${ENV}" \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+            --output text)
+          echo "env=${ENV}" >> "$GITHUB_OUTPUT"
+          echo "api_url=${API_URL}" >> "$GITHUB_OUTPUT"
+          echo "Using VITE_API_BASE_URL=${API_URL}"
+
+      - name: Build frontend
+        run: pnpm --filter @chapterquest/frontend build
+        env:
+          VITE_API_BASE_URL: ${{ steps.stack.outputs.api_url }}
+
+      - name: Deploy frontend to S3 + CloudFront
+        run: |
+          ENV="${{ steps.stack.outputs.env }}"
           FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
             --stack-name "chapterquest-root-${ENV}" \
             --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \

@@ -19,8 +19,14 @@ DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
   --output text \
   --region "${AWS_REGION}")
 
-echo "==> Building frontend"
-pnpm --filter @chapterquest/frontend build
+API_URL="${VITE_API_BASE_URL:-$(aws cloudformation describe-stacks \
+  --stack-name "chapterquest-root-${ENV}" \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+  --output text \
+  --region "${AWS_REGION}")}"
+
+echo "==> Building frontend (VITE_API_BASE_URL=${API_URL})"
+VITE_API_BASE_URL="${API_URL}" pnpm --filter @chapterquest/frontend build
 
 echo "==> Syncing to s3://${FRONTEND_BUCKET}"
 aws s3 sync "${ROOT_DIR}/frontend/dist/" "s3://${FRONTEND_BUCKET}/" --delete

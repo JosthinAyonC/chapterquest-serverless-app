@@ -1,5 +1,15 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+function requireApiBaseUrl(): string {
+  if (!API_BASE_URL) {
+    throw new GuestApiError(
+      'VITE_API_BASE_URL no está configurada en el build del frontend.',
+      0,
+      'config_error',
+    );
+  }
+  return API_BASE_URL.replace(/\/$/, '');
+}
 
 export interface RegisterGuestResponse {
   username: string;
@@ -27,11 +37,22 @@ export class GuestApiError extends Error {
 export async function registerGuest(
   username: string,
 ): Promise<RegisterGuestResponse> {
-  const response = await fetch(`${API_BASE_URL}/users/guest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
-  });
+  const baseUrl = requireApiBaseUrl();
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/users/guest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+  } catch {
+    throw new GuestApiError(
+      'No se pudo conectar con la API. Revisa la URL del backend o CORS.',
+      0,
+      'network_error',
+    );
+  }
 
   const body = (await response.json()) as
     | RegisterGuestResponse
