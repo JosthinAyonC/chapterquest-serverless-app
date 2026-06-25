@@ -334,6 +334,12 @@ img {
   font-size: 0.9rem;
 }
 
+.form-error {
+  margin: 0;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
 .profile-form input {
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
@@ -341,6 +347,11 @@ img {
   background: var(--color-bg);
   color: var(--color-text);
   font-size: 1rem;
+}
+
+.profile-form input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .profile-card {

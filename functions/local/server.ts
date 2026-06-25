@@ -1,6 +1,7 @@
 import express from 'express';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { handler as healthHandler } from '../auth/handlers/health';
+import { handler as guestHandler } from '../users/handlers/guest';
 
 const app = express();
 const PORT = Number(process.env.LOCAL_API_PORT ?? 3001);
@@ -76,6 +77,7 @@ async function invokeHandler(
 }
 
 app.get('/health', (req, res) => invokeHandler(req, res, healthHandler));
+app.post('/users/guest', (req, res) => invokeHandler(req, res, guestHandler));
 
 app.listen(PORT, () => {
   console.log(

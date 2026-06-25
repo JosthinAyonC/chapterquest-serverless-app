@@ -44,19 +44,14 @@ jobs:
       - name: Lint
         run: pnpm --filter @chapterquest/functions lint
 
-      - name: Test
+      - name: Unit tests
         run: pnpm --filter @chapterquest/functions test
 
       - name: Build Lambda bundles
         run: pnpm --filter @chapterquest/functions build
 
-      - name: Smoke test local API
-        run: |
-          pnpm --filter @chapterquest/functions start:local &
-          SERVER_PID=$!
-          sleep 3
-          curl -sf http://localhost:3001/health | grep -q '"status":"healthy"'
-          kill $SERVER_PID
+      - name: API smoke tests (local server)
+        run: chmod +x scripts/smoke-api.sh && ./scripts/smoke-api.sh
 
   deploy:
     needs: build

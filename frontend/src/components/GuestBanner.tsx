@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useGuestUser } from '../context/GuestUserContext';
+import { useGuestUser } from '../context/useGuestUser';
 
 export default function GuestBanner() {
   const { guest, isLoading } = useGuestUser();

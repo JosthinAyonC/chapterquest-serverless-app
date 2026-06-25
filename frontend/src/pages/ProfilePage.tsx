@@ -1,15 +1,42 @@
-import { useState, type FormEvent } from 'react';
-import { useGuestUser } from '../context/GuestUserContext';
+import { useForm } from 'react-hook-form';
+import { GuestApiError } from '../lib/api';
+import { useGuestUser } from '../context/useGuestUser';
+
+interface GuestFormValues {
+  username: string;
+}
+
+const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 
 export default function ProfilePage() {
-  const { guest, setGuestUsername, clearGuest, isLoading } = useGuestUser();
-  const [username, setUsername] = useState('');
+  const { guest, registerGuest, clearGuest, isLoading } = useGuestUser();
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setGuestUsername(username);
-    setUsername('');
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+    reset,
+  } = useForm<GuestFormValues>({
+    defaultValues: { username: '' },
+    mode: 'onBlur',
+  });
+
+  const onSubmit = handleSubmit(async ({ username }) => {
+    try {
+      await registerGuest(username);
+      reset();
+    } catch (err) {
+      if (err instanceof GuestApiError) {
+        setError('username', { type: 'server', message: err.message });
+        return;
+      }
+      setError('root.server', {
+        type: 'server',
+        message: 'No se pudo registrar el nombre. Intenta de nuevo.',
+      });
+    }
+  });
 
   if (isLoading) {
     return (
@@ -24,38 +51,64 @@ export default function ProfilePage() {
       <header className="page-header">
         <h1>Perfil</h1>
         <p className="page-subtitle">
-          Elige un nombre de invitado. Se guardará en una cookie de tu
-          navegador. En el MVP validaremos unicidad contra DynamoDB.
+          Elige un nombre de invitado. Se guardará en una cookie y se registrará
+          en LitCircle para validar que nadie más lo use.
         </p>
       </header>
 
       {guest ? (
         <div className="profile-card">
           <p>
-            Actualmente navegas como{' '}
-            <strong>@{guest.username}</strong>
+            Actualmente navegas como <strong>@{guest.username}</strong>
           </p>
           <button type="button" className="btn btn--ghost" onClick={clearGuest}>
             Cambiar nombre
           </button>
         </div>
       ) : (
-        <form className="profile-form" onSubmit={handleSubmit}>
+        <form className="profile-form" onSubmit={onSubmit} noValidate>
           <label htmlFor="username">Nombre de invitado</label>
           <input
             id="username"
-            name="username"
             type="text"
             placeholder="ej. lector_aventurero"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            minLength={2}
-            maxLength={32}
-            required
             autoComplete="nickname"
+            aria-invalid={errors.username ? 'true' : 'false'}
+            aria-describedby={errors.username ? 'username-error' : undefined}
+            disabled={isSubmitting}
+            {...register('username', {
+              required: 'El nombre es obligatorio.',
+              minLength: {
+                value: 2,
+                message: 'Mínimo 2 caracteres.',
+              },
+              maxLength: {
+                value: 32,
+                message: 'Máximo 32 caracteres.',
+              },
+              pattern: {
+                value: USERNAME_PATTERN,
+                message: 'Solo letras minúsculas, números y guión bajo.',
+              },
+              setValueAs: (value: string) => value.trim().toLowerCase(),
+            })}
           />
-          <button type="submit" className="btn btn--primary">
-            Guardar en cookie
+          {errors.username && (
+            <p className="form-error" id="username-error" role="alert">
+              {errors.username.message}
+            </p>
+          )}
+          {errors.root?.server && (
+            <p className="form-error" role="alert">
+              {errors.root.server.message}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Registrando…' : 'Guardar nombre'}
           </button>
         </form>
       )}
