@@ -3,6 +3,7 @@ export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
 }
 
+/** Perfil invitado opcional (cookie). No es login ni identidad en Juguemos. */
 export interface UserProfile {
   pk: string;
   sk: string;
@@ -12,15 +13,16 @@ export interface UserProfile {
   lastSeenAt: string;
 }
 
-export type SessionStatus = 'draft' | 'running' | 'review' | 'closed';
+export type ActivityStatus = 'draft' | 'running' | 'review' | 'closed';
 
-export interface SessionMetadata {
+/** Actividad de role play — persiste en DynamoDB. API: /sessions */
+export interface ActivityMetadata {
   pk: string;
   sk: 'METADATA';
   sessionId: string;
   accessCode: string;
   hostToken: string;
-  status: SessionStatus;
+  status: ActivityStatus;
   bookKey: string;
   timerMinutes: number;
   timerEndsAt?: string;
@@ -29,25 +31,27 @@ export interface SessionMetadata {
   ttl?: number;
 }
 
-export interface SessionParticipant {
+/** Estudiante dentro de una actividad — mostrar displayName + role en UI siempre */
+export interface ActivityParticipant {
   pk: string;
   sk: `PARTICIPANT#${number}`;
   slot: number;
   displayName: string;
-  role?: string;
+  role: string;
   claimedAt?: string;
 }
 
-export interface SessionReview {
+export interface ActivityReview {
   pk: string;
   sk: `REVIEW#${number}`;
   slot: number;
   displayName: string;
+  role: string;
   content: string;
   createdAt: string;
 }
 
-export interface SessionConnection {
+export interface ActivityConnection {
   pk: string;
   sk: `CONNECTION#${string}`;
   connectionId: string;
@@ -64,3 +68,14 @@ export interface LibraryObjectMeta {
   sizeBytes?: number;
   lastModified?: string;
 }
+
+/** @deprecated Use ActivityMetadata */
+export type SessionStatus = ActivityStatus;
+/** @deprecated Use ActivityMetadata */
+export type SessionMetadata = ActivityMetadata;
+/** @deprecated Use ActivityParticipant */
+export type SessionParticipant = ActivityParticipant;
+/** @deprecated Use ActivityReview */
+export type SessionReview = ActivityReview;
+/** @deprecated Use ActivityConnection */
+export type SessionConnection = ActivityConnection;

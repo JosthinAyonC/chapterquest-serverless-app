@@ -23,17 +23,17 @@ export default function HomePage() {
 
       <div className="hero-grid">
         <article className="feature-card">
-          <h3>Lectura sin barreras</h3>
+          <h3>Role play en aula</h3>
           <p>
-            Entra como invitado con un nombre. Sin contraseña, sin abandonar la
-            página antes de explorar.
+            Seis estudiantes, seis roles, un libro. Sin login: la actividad
+            persiste; cada uno se ve claramente con su rol asignado.
           </p>
         </article>
         <article className="feature-card">
-          <h3>PDFs en la nube</h3>
+          <h3>Biblioteca curada</h3>
           <p>
-            Sube y lee documentos con acceso seguro mediante URLs firmadas —
-            solo desde LitCircle.
+            PDFs seleccionados por el equipo, listos para elegir en cada
+            actividad de círculo literario.
           </p>
         </article>
         <article className="feature-card">

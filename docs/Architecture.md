@@ -6,7 +6,7 @@ Visión técnica de la plataforma. La definición funcional del producto está e
 
 ## Visión general
 
-LitCircle es una plataforma serverless en AWS orientada a **sesiones de círculo literario en escuelas**: biblioteca curada en S3, API REST para sesiones/reviews, y **WebSocket API** para sincronía en aula.
+LitCircle es una plataforma serverless en AWS orientada a **actividades de círculo literario en escuelas**. **No hay login:** persiste la **actividad de role play** (6 nombres + roles), no una sesión de usuario.
 
 ```mermaid
 flowchart TD
@@ -20,7 +20,7 @@ flowchart TD
   apigw --> lsessions[Lambda sessions]
   wss --> lws[Lambda ws handlers]
   lusers --> ddbUsers[(DynamoDB Users)]
-  lsessions --> ddbSessions[(DynamoDB Sessions)]
+  lsessions --> ddbSessions[(DynamoDB Activities)]
   llibrary --> s3library[S3 library bucket]
   lsessions --> s3library
   lws --> ddbSessions
@@ -63,7 +63,7 @@ flowchart LR
 |-------|----------|
 | `networking` | ACM certs, Route53 (condicional) |
 | `storage` | S3 frontend + **library** (`{env}-chapterquest-library`, prefijo `library/`) |
-| `database` | DynamoDB **Users**, **Sessions** (single-table + GSI1 + TTL) |
+| `database` | DynamoDB **Users** (perfil invitado opcional), **Sessions** (= actividades role play) |
 | `api` | HTTP API + WebSocket API + Lambdas + roles IAM |
 | `frontend` | CloudFront OAC + bucket policy |
 
@@ -97,18 +97,22 @@ sequenceDiagram
 
 ## Sesiones y role play
 
+> **Terminología:** en producto = **actividad**; en API/IaC = `Session` / `/sessions` / tabla `*-chapterquest-sessions`. No implica login.
+
+### Roster nombre + rol (UX)
+
+Durante toda la actividad la UI debe mostrar los 6 participantes con su rol asignado (panel fijo en host/proyector). Ver ProductSpec §2.2.
+
 ```mermaid
 stateDiagram-v2
-  [*] --> draft: Host crea sesión
+  [*] --> draft: Host crea actividad
   draft --> running: Empecemos + timer
   running --> review: Tiempo = 0 + host confirma
-  review --> closed: Host cierra sesión
+  review --> closed: Host cierra actividad
   closed --> [*]
 ```
 
-Persistencia propuesta en DynamoDB (`Sessions`): participantes, roles, libro, timer, estado, reviews.
-
-Sincronía en tiempo real (timer, mural): **API Gateway WebSocket** + tabla de conexiones.
+Persistencia en DynamoDB (`Sessions`): participantes con `displayName` + `role`, libro, timer, reviews.
 
 ---
 
@@ -139,31 +143,34 @@ sequenceDiagram
 
 ## DynamoDB — diseño actual y evolución
 
-### Users (implementado)
+### Users (perfil invitado — opcional, no es login)
+
+Cookie + `POST /users/guest` para navegar el sitio. **No** identifica estudiantes en Juguemos.
 
 | Atributo | Valor |
 |----------|-------|
 | PK | `USER#<username>` |
 | SK | `PROFILE` |
 
-Invitado: unicidad por username, cookie en frontend.
+### Activities (tabla `sessions` — implementado en IaC)
 
-### Sessions (desplegado en IaC — lógica pendiente)
-
-Tabla `{env}-chapterquest-sessions` con TTL en atributo `ttl` y **GSI1** para lookup por código de acceso.
+Actividad de role play: lo que **sí** persiste entre pasos del juego.
 
 | Atributo | Valor |
 |----------|-------|
-| PK | `SESSION#<sessionId>` |
+| PK | `SESSION#<activityId>` |
 | SK | `METADATA` \| `PARTICIPANT#<n>` \| `REVIEW#<n>` \| `CONNECTION#<id>` |
+| PARTICIPANT.role | Ej. `Facilitator` — mostrar siempre en UI con `displayName` |
 | GSI1PK | `CODE#<accessCode>` |
-| GSI1SK | `SESSION#<sessionId>` |
+| GSI1SK | `SESSION#<activityId>` |
 
-Reviews y conexiones WebSocket viven en la misma tabla (single-table design).
+Reviews y conexiones WebSocket en la misma tabla (single-table design).
 
 ---
 
-## Flujo implementado: invitado
+## Flujo implementado: perfil invitado (opcional)
+
+> Independiente del flujo Juguemos. No sustituye a los 6 nombres de la actividad.
 
 ```mermaid
 sequenceDiagram
@@ -196,7 +203,7 @@ Servicios previstos por dominio:
 | `auth` | `GET /health` | ✅ |
 | `users` | `POST /users/guest` | ✅ |
 | `library` | `GET /library`, `GET /library/{key}/preview-url` | ✅ stub |
-| `sessions` | CRUD sesión, reviews, export, by-code | ✅ stub |
+| `sessions` | CRUD **actividad**, reviews, export, by-code | ✅ stub |
 | `ws` | `$connect`, `$disconnect`, `$default` | ✅ stub |
 
 ---
@@ -208,10 +215,10 @@ Servicios previstos por dominio:
 | `/` | Landing | Placeholder |
 | `/library` | Biblioteca | Placeholder |
 | `/guide` | Guía | Por crear |
-| `/play` | Juguemos | Por crear |
-| `/play/:sessionId/review` | Mural host | Por crear |
+| `/play` | Juguemos (roster nombre+rol visible) | Por crear |
+| `/play/:activityId/review` | Mural host | Por crear |
 | `/review/:code` | Entrada participante | Por crear |
-| `/profile` | Perfil invitado | Implementado |
+| `/profile` | Perfil invitado (opcional, no login) | Implementado |
 
 Rutas legacy `/reviews`, `/community` se deprecarán o redirigirán en favor del flujo de sesión.
 
@@ -223,7 +230,7 @@ Rutas legacy `/reviews`, `/community` se deprecarán o redirigirán en favor del
 - S3: Block Public Access; lectura PDF vía presigned URLs
 - DynamoDB: encryption at rest, PITR
 - CI/CD: GitHub OIDC (sin access keys de larga vida)
-- Host token para cerrar sesión (MVP); auth docente completa — decisión abierta
+- Host token para cerrar actividad (MVP); **sin login estudiantil**
 
 ---
 

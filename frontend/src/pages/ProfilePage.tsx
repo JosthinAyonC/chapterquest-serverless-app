@@ -51,8 +51,9 @@ export default function ProfilePage() {
       <header className="page-header">
         <h1>Perfil</h1>
         <p className="page-subtitle">
-          Elige un nombre de invitado. Se guardará en una cookie y se registrará
-          en LitCircle para validar que nadie más lo use.
+          Nombre opcional para navegar el sitio (cookie). No es inicio de sesión
+          ni tu identidad en Juguemos — allí el docente ingresa los 6 nombres de
+          la actividad y el sistema asigna roles.
         </p>
       </header>
 

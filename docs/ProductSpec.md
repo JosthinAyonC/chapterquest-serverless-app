@@ -20,7 +20,7 @@ El flujo principal no es “subir PDFs como usuario”, sino **curaduría centra
 |-------|-------------|
 | **Read** | Acceso a biblioteca curada de PDFs con preview |
 | **Share** | Role play colaborativo con 6 roles definidos |
-| **Learn Together** | Reviews post-actividad vinculadas a participantes reales de la sesión |
+| **Learn Together** | Reviews post-actividad vinculadas a participantes (nombre + rol) de la actividad |
 
 **Tagline:** *Read, Share, Learn Together*
 
@@ -28,12 +28,41 @@ El flujo principal no es “subir PDFs como usuario”, sino **curaduría centra
 
 ---
 
+## 2.1 Modelo de identidad — sin login ni sesión de usuario
+
+**[Cierto] LitCircle no tiene inicio de sesión (login).** No existe cuenta de estudiante ni sesión autenticada que persista la identidad del usuario entre visitas.
+
+| Concepto | ¿Persiste? | Descripción |
+|----------|------------|-------------|
+| **Actividad de role play** | ✅ Sí (DynamoDB) | Instancia del juego en aula: 6 nombres, roles asignados, libro, timer, reviews. API: recurso `/sessions` (= actividad, no login). |
+| **Participante** | Solo dentro de la actividad | Nombre libre ingresado al inicio (1 de 6). **No** es una cuenta. |
+| **Rol asignado** | Ligado al participante en esa actividad | Facilitator, Connector, etc. — asignado por ruleta. |
+| **Perfil invitado** (implementación actual) | Cookie opcional | Nombre en `/profile` para navegar el sitio. **No** participa en Juguemos ni reemplaza a los 6 nombres de la actividad. Puede eliminarse o quedar solo para uso general del sitio. |
+
+**Regla de producto:** lo que el docente y los estudiantes retoman es la **actividad en curso** (código / enlace / QR), no un “usuario logueado”.
+
+### 2.2 Visibilidad nombre + rol (requisito UX)
+
+El sistema debe **mostrar en todo momento** quién es cada estudiante y qué rol le tocó:
+
+| Momento | Qué se muestra |
+|---------|----------------|
+| Tras la ruleta | Pantalla de confirmación: 6 filas **Nombre — Rol** antes de iniciar timer |
+| Durante la actividad | Panel fijo (host + pantalla proyectada): roster visible todo el tiempo |
+| Cronómetro activo | Roster sigue visible; no ocultar roles al mostrar el timer |
+| Fase review | Mural/reviews etiquetadas con **nombre + rol** del autor |
+| Export / reporte | PDF o captura incluye nombre, rol y review de cada participante |
+
+Formato recomendado en UI: **`María · Facilitator`** (nombre + rol en inglés pedagógico, o bilingüe).
+
+---
+
 ## 3. Personas
 
 | Persona | Rol en el sistema | Necesidades |
 |---------|-------------------|-------------|
-| **Host / docente** | Inicia sesión, asigna roles, controla timer, cierra sesión, exporta reporte | Flujo claro, no invasivo, panel de control |
-| **Participante (estudiante)** | Uno de 6 nombres en la sesión; hace review escaneando QR o con código | Entrar sin fricción, elegir su nombre una sola vez |
+| **Host / docente** | Crea y conduce la **actividad** de role play, controla timer, cierra actividad, exporta reporte | Flujo claro, roster nombre+rol siempre visible |
+| **Participante (estudiante)** | Uno de 6 nombres en la actividad; hace review con QR/código | Sin login; se identifica solo dentro de esa actividad |
 | **Curador / admin** | Sube PDFs al bucket con metadata | Sin CRUD en app; operación vía S3/CLI |
 
 ---
@@ -46,7 +75,7 @@ flowchart TD
   library[Biblioteca]
   guide[Guía]
   play[Juguemos]
-  sessionPanel[Mi sesión abierta - opcional]
+  activityPanel[Actividad en curso - opcional]
   reviewEntry[Entrada a review - QR / código / enlace]
 
   landing --> library
@@ -55,8 +84,8 @@ flowchart TD
   play --> timer[Actividad + cronómetro]
   timer --> reviewHost[Pantalla review - host]
   reviewEntry --> reviewBoard[Mural / Padlet]
-  sessionPanel --> reviewBoard
-  play -.->|cookie sesión activa| sessionPanel
+  activityPanel --> reviewBoard
+  play -.->|actividad abierta| activityPanel
 ```
 
 ### 4.1 Landing (Home)
@@ -113,12 +142,13 @@ Página estática (con componentes interactivos embebidos) que explica:
 
 Sección principal de la **dinámica de role play**. Redirige o contiene el flujo interactivo completo.
 
-### 4.5 Mi sesión abierta (opcional, condicional)
+### 4.5 Actividad en curso (opcional, condicional)
 
-Visible cuando el frontend detecta **sesión activa** (cookie/localStorage + validación backend).
+Visible cuando el frontend detecta una **actividad de role play abierta** (`activityId` + validación en backend — no es login ni cookie de usuario).
 
-- Lleva al panel tipo Padlet del host o del participante según rol.
-- Nombre final por definir con cliente.
+- Lleva al panel del host o del participante según contexto.
+- Nombre UI por validar con cliente: «Actividad en curso», «Continuar role play», etc.
+- **No** confundir con el perfil invitado de `/profile`.
 
 ### 4.6 Entrada a review (participantes)
 
@@ -127,7 +157,7 @@ Múltiples caminos — todos deben convivir sin confundir a quien no tiene revie
 | Método | Comportamiento |
 |--------|----------------|
 | **QR** (pantalla host) | Escaneo → selección de nombre → formulario review |
-| **Enlace copiable** | Estilo Kahoot — URL con código de sesión/review |
+| **Enlace copiable** | Estilo Kahoot — URL con código de **actividad** |
 | **Botón global** | «Tengo que hacer un review» → ingreso de código → tablero |
 
 El botón global debe ser **discreto** o contextual para no parecer obsoleto cuando no hay reviews activas.
@@ -147,11 +177,13 @@ Cada rol tiene descripción pedagógica (inglés en material cliente; UI puede m
 | Ilustrador | **Illustrator** | Dibujo/visual de evento, personaje o idea central |
 | Inspector de vocabulario | **Vocabulary Inspector** | Palabras clave, significados, expresiones descriptivas |
 
-**Asignación:** ruleta del sistema asigna **aleatoriamente** cada nombre (ingresado previamente en 6 cajas de texto) a un rol único.
+**Asignación:** ruleta asigna **aleatoriamente** cada nombre a un rol único. Tras asignar, la UI **debe** mostrar el roster completo nombre + rol antes de continuar (ver §2.2).
 
 ---
 
-## 6. Flujo de sesión (role play)
+## 6. Flujo de actividad (role play)
+
+> En API e infraestructura el recurso se llama `Session` / `/sessions` por brevedad técnica. En producto = **actividad de role play**, no sesión de usuario.
 
 ```mermaid
 sequenceDiagram
@@ -162,8 +194,9 @@ sequenceDiagram
 
   H->>SYS: Ingresa 6 nombres
   H->>SYS: Ruleta asigna roles
+  SYS->>H: Muestra roster 6× (nombre + rol)
   H->>SYS: Selecciona libro (Biblioteca)
-  SYS->>WS: Estado sesión CREATED
+  SYS->>WS: Actividad CREATED
   H->>SYS: ¿Listos? Tiempo estimado (default 40 min)
   H->>SYS: Clic «Empecemos»
   SYS->>WS: TIMER_RUNNING
@@ -176,7 +209,7 @@ sequenceDiagram
   P->>SYS: QR / código → elige su nombre (único)
   P->>SYS: Escribe review
   SYS->>SYS: Nombre queda no disponible
-  H->>SYS: Cierra sesión cuando convenga
+  H->>SYS: Cierra actividad cuando convenga
   H->>SYS: Descarga reporte / captura / PDF mural
 ```
 
@@ -184,26 +217,27 @@ sequenceDiagram
 
 | # | Regla |
 |---|-------|
-| R1 | Exactamente **6 participantes** por sesión (nombres libres, no requiere cuenta) |
-| R2 | Cada nombre → **un rol** vía ruleta (sin repetición) |
-| R3 | Un **libro** por sesión, elegido de biblioteca curada |
+| R1 | Exactamente **6 participantes** por actividad (nombres libres, **sin cuenta ni login**) |
+| R2 | Cada nombre → **un rol** vía ruleta; roster **nombre + rol** visible en UI (§2.2) |
+| R3 | Un **libro** por actividad, elegido de biblioteca curada |
 | R4 | Tiempo en **minutos**; default **40**; explicación clara al host |
 | R5 | Cronómetro **cuenta atrás**; al llegar a 0: alerta **no invasiva** (modal + sonido suave) |
 | R6 | Transición a review **manual** — botón «Realicemos el review» |
-| R7 | En review, cada participante elige **su nombre de la sesión** una sola vez |
-| R8 | Reviews **asíncronas** permitidas — identidad atada a sesión |
-| R9 | Host **cierra sesión** explícitamente para liberar recursos e iniciar otra |
+| R7 | En review, cada participante elige **su nombre de la actividad** una sola vez |
+| R8 | Reviews **asíncronas** permitidas — identidad = nombre + rol de esa actividad |
+| R9 | Host **cierra la actividad** explícitamente para poder iniciar otra |
 | R10 | Host puede **exportar** reporte (PDF o imagen del mural) |
 
-### 6.2 Identificación de participantes
+### 6.2 Identificación de participantes (sin login)
 
-No se exige registro completo. Para reviews:
+No hay registro ni inicio de sesión. Para la actividad y las reviews:
 
-- Los 6 nombres se definen al inicio de la sesión.
-- Al entrar al tablero, el participante **se autoselecciona** entre esos 6.
-- Tras elegir, el nombre queda **bloqueado** para otros (optimistic lock / DynamoDB conditional write).
+- Los 6 nombres se definen al **inicio de la actividad** (host).
+- Cada nombre recibe un **rol** visible para todos (§2.2).
+- En review, el participante **se autoselecciona** entre esos 6 nombres.
+- Tras elegir, el nombre queda **bloqueado** para otros.
 
-**Objetivo:** saber quién escribió qué en cada sesión real, aunque la review sea tarea para casa.
+**Objetivo:** saber quién (nombre + rol) escribió qué en cada actividad real, aunque la review sea tarea para casa.
 
 ---
 
@@ -226,7 +260,7 @@ flowchart LR
 
 **UI host:** código grande, QR, botón copiar enlace.
 
-**UI participante:** selector de nombre → textarea/tarjeta → envío al mural.
+**UI participante:** selector de nombre (solo los 6 de la actividad) → muestra su rol asignado → textarea/tarjeta → envío al mural con etiqueta **nombre · rol**.
 
 **Sincronización:** cuando un participante publica, el mural del host se actualiza (WebSocket o polling; ver §9).
 
@@ -237,11 +271,12 @@ flowchart LR
 | ID | Requisito | Notas |
 |----|-----------|-------|
 | NFR-1 | **WebSockets** para experiencia síncrona | Timer, ruleta, mural visible en tiempo real para quienes estén conectados |
-| NFR-2 | **Detección de sesión activa** en frontend | Cookie/storage + API → muestra «Mi sesión abierta» |
+| NFR-2 | **Detección de actividad abierta** | `activityId` en storage + API → muestra «Actividad en curso» (no login) |
 | NFR-3 | Alertas **no invasivas** | Timer fin: modal + sonido opcional; no interrumpir abruptamente |
 | NFR-4 | Serverless first | API Gateway HTTP + WebSocket API; Lambda; DynamoDB; S3 |
 | NFR-5 | Escuelas / tablets | UI responsive; QR legible en proyector |
 | NFR-6 | Entornos **dev/prod** | Chip «Test environment» en dev (implementado) |
+| NFR-7 | **Roster nombre + rol siempre visible** | Durante actividad, review y export (§2.2) |
 
 ### 8.1 WebSockets — dirección técnica (borrador)
 
@@ -252,7 +287,7 @@ flowchart LR
   L1[Lambda connect]
   L2[Lambda message]
   L3[Lambda disconnect]
-  DDB[(DynamoDB Sessions + Connections)]
+  DDB[(DynamoDB Activities + Connections)]
 
   FE <-->|wss| WSS
   WSS --> L1
@@ -271,28 +306,30 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 
 | Entidad | Almacén | Uso actual |
 |---------|---------|------------|
-| Guest profile | DynamoDB `Users` | Nombre invitado único (cookie + API) |
+| Perfil invitado (opcional) | DynamoDB `Users` + cookie | Navegación general del sitio. **No** es login ni identidad en Juguemos. |
 
-### 9.2 Planificado
+### 9.2 Planificado — persiste la actividad, no el usuario
 
 | Entidad | Almacén | Propósito |
 |---------|---------|-----------|
 | **Book (catálogo)** | S3 `{env}-chapterquest-library` + metadata | Fuente de verdad; sin tabla Books |
-| **Session** | DynamoDB | Host, libro, 6 participantes, roles, estado, timer |
-| **Review** | DynamoDB | Texto, sessionId, participantSlot, timestamp |
-| **Connection** | DynamoDB | connectionId WebSocket ↔ sessionId |
+| **Actividad (role play)** | DynamoDB `sessions` | 6 participantes, roles, libro, timer, estado. API: `/sessions`. |
+| **Review de actividad** | DynamoDB (misma tabla) | Texto + participantSlot + rol |
+| **Conexión WebSocket** | DynamoDB (misma tabla) | Sincronía en aula |
 
-**Tabla Sessions (propuesta):**
+**Tabla `sessions` (= actividades, no usuarios):**
 
 | Atributo | Descripción |
 |----------|-------------|
-| PK | `SESSION#<sessionId>` |
-| SK | `METADATA` \| `PARTICIPANT#<1-6>` \| `REVIEW#<participantSlot>` |
+| PK | `SESSION#<activityId>` |
+| SK | `METADATA` \| `PARTICIPANT#<1-6>` \| `REVIEW#<slot>` |
 | status | `draft` \| `running` \| `review` \| `closed` |
 | bookKey | Clave S3 del PDF |
 | timerMinutes | Entero |
 | timerEndsAt | ISO timestamp |
-| hostToken | Token para cerrar/exportar (sin auth completa) |
+| hostToken | Token del docente para cerrar/exportar (no login de estudiantes) |
+
+**Participante (`PARTICIPANT#n`):** `displayName`, `role` (ej. `Facilitator`), `claimedAt` (en review).
 
 ---
 
@@ -301,7 +338,7 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 | Área | Estado | Notas |
 |------|--------|-------|
 | Infra AWS (dev/prod) | ✅ Desplegado | CloudFormation, CI/CD, OIDC |
-| Guest / perfil básico | ✅ Parcial | POST `/users/guest`, cookie, banner |
+| Guest / perfil opcional | ✅ Parcial | Cookie en `/profile` — **no** es login ni identidad en Juguemos |
 | Landing contenido cliente | 🔲 Pendiente | Copy definido; animación TBD |
 | Biblioteca S3 curada | 🔲 Pendiente | Reemplaza upload usuario |
 | Guía (6 roles) | 🔲 Pendiente | Página + copy |
@@ -324,10 +361,10 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 | **I3** | Biblioteca: list S3 + metadata + preview PDF | Bucket `library/` + convención metadata |
 | **I4** | Guía estática + CTA «Empecemos» | I3 (enlace a libros) |
 | **I5** | Juguemos: nombres, ruleta, libro, timer local | I3 |
-| **I6** | API Sessions + persistencia DynamoDB | I5 |
-| **I7** | WebSocket sync (timer + mural) | I6, NFR-1 |
+| **I6** | API actividades + persistencia DynamoDB | I5 |
+| **I7** | WebSocket sync (timer + mural + roster) | I6, NFR-1 |
 | **I8** | Review: QR, código, claim nombre, mural | I6 |
-| **I9** | Host: cerrar sesión, export PDF/screenshot | I8 |
+| **I9** | Host: cerrar actividad, export PDF/screenshot | I8 |
 | **I10** | Landing Three.js / animación Malu y Danna | Diseño cliente |
 
 ---
@@ -339,10 +376,10 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 | D1 | Visor PDF | PDF.js, react-pdf, iframe presigned | PDF.js — control y offline-friendly |
 | D2 | Metadata vs JSON sidecar | Solo S3 metadata vs `{book}.pdf` + `{book}.json` | Metadata si ≤6 campos; JSON si hay sinopsis larga |
 | D3 | Prefijo S3 biblioteca | `library/`, `books/en/` | `library/` plano al inicio |
-| D4 | Nombre sección cookie | «Mi sesión abierta», «Continuar actividad» | Validar con cliente |
+| D4 | Nombre sección actividad abierta | «Actividad en curso», «Continuar role play» | Validar con cliente |
 | D5 | Idioma UI | EN pedagógico / ES navegación | Bilingüe progresivo |
 | D6 | Sonido timer | Web Audio API, archivo MP3 suave | MP3 corto, volumen bajo, respetar `prefers-reduced-motion` |
-| D7 | Auth docente | Solo host token vs login futuro | Host token en URL/cookie para MVP escolar |
+| D7 | Control del docente | Solo host token vs login futuro | Host token en URL/storage para MVP — **sin login estudiantil** |
 
 ---
 
@@ -350,10 +387,14 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 
 | Término | Definición |
 |---------|------------|
+| **Actividad (role play)** | Instancia del juego en aula (6 nombres, roles, libro, timer). Persiste en DynamoDB. API: `/sessions`. **No** es login. |
+| **Participante** | Estudiante identificado por nombre libre dentro de una actividad |
+| **Rol** | Facilitator, Connector, etc. — asignado por ruleta a un participante |
+| **Roster** | Lista visible de los 6 pares **nombre · rol** |
+| **Host** | Docente que crea y cierra la actividad |
+| **Perfil invitado** | Cookie opcional en `/profile` para navegar el sitio — **independiente** de Juguemos |
 | **Círculo literario** | Grupo colaborativo que discute un texto con roles asignados |
-| **Host** | Docente o facilitador que inicia y cierra la sesión |
-| **Sesión** | Instancia única de actividad (6 participantes, 1 libro, 1 timer) |
-| **Review** | Reflexión escrita post-actividad en el mural |
+| **Review** | Reflexión escrita post-actividad, firmada con nombre + rol |
 | **Curador** | Persona que sube PDFs al bucket (fuera de la app) |
 
 ---

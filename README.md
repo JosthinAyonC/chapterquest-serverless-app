@@ -2,7 +2,7 @@
 
 > **LitCircle** es el producto. **ChapterQuest** es el nombre técnico del repositorio y la plataforma serverless que lo impulsa.
 
-Plataforma web para **círculos literarios escolares**: lectura curada, role play colaborativo con 6 roles, cronómetro facilitado y reviews post-actividad. Desplegada serverless en AWS.
+Plataforma web para **círculos literarios escolares** — sin login. Persiste la **actividad de role play** (6 estudiantes + roles), no una sesión de usuario.
 
 **Tagline:** *Read, Share, Learn Together*
 
@@ -15,7 +15,7 @@ Plataforma web para **círculos literarios escolares**: lectura curada, role pla
 | **Landing** | Bienvenida, qué es un círculo literario, animación (futuro Three.js) |
 | **Biblioteca** | Catálogo de PDFs curados desde S3 (sin upload público) |
 | **Guía** | Explicación del role play y los 6 roles → CTA «Empecemos» |
-| **Juguemos** | Dinámica: 6 nombres, ruleta de roles, libro, cronómetro, review |
+| **Juguemos** | 6 nombres, ruleta, roster **nombre + rol**, cronómetro, review |
 
 Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs/ProductSpec.md)** (SDD).
 
@@ -26,12 +26,13 @@ Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs
 | Capacidad | Estado |
 |-----------|--------|
 | Infra AWS (dev + prod), CI/CD OIDC | ✅ |
-| Registro invitado (`POST /users/guest`, cookie) | ✅ |
+| Registro invitado (`/profile`, cookie) | ✅ Opcional — **no** es login ni identidad en Juguemos |
+| Roster estudiante + rol visible | 🔲 |
 | Chip entorno (dev / local vs prod) | ✅ |
 | Landing con copy cliente | 🔲 |
 | Biblioteca S3 + preview PDF | 🔲 |
 | Guía + 6 roles | 🔲 |
-| Juguemos (ruleta, timer, sesión) | 🔲 |
+| Juguemos (ruleta, timer, actividad) | 🔲 |
 | WebSockets (sync en aula) | 🔲 |
 | Review QR / mural / export | 🔲 |
 

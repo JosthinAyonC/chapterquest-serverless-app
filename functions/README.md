@@ -10,9 +10,9 @@ Especificación funcional del producto: [`docs/ProductSpec.md`](../docs/ProductS
 functions/
 ├── common/           # Utilidades compartidas (http, logger, dynamo, models)
 ├── auth/             # Health check
-├── users/            # Perfiles de invitado
+├── users/            # Perfil invitado opcional (no login; no es Juguemos)
 ├── library/          # Catálogo S3 (list + preview URL)
-├── sessions/         # Role play, timer, reviews, export
+├── sessions/         # Actividades role play (API /sessions), timer, reviews
 ├── ws/               # WebSocket connect / disconnect / message
 └── local/            # Servidor Express para desarrollo local
 ```
@@ -85,7 +85,7 @@ Variables de entorno útiles:
 | `AWS_REGION` | `us-east-1` | Región AWS |
 | `LOCAL_API_PORT` | `3001` | Puerto del servidor local |
 
-Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de registrar invitados. `/health` no necesita AWS; `/users/guest` escribe en DynamoDB remoto (`dev-chapterquest-users`).
+Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de usar `/users/guest`. Ese endpoint es perfil opcional del sitio, **no** la actividad de role play.
 
 ## Convención de nombres
 
@@ -109,7 +109,7 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de regis
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | `GET` | `/health` | Health check |
-| `POST` | `/users/guest` | Registro invitado (unicidad username) |
+| `POST` | `/users/guest` | Perfil invitado opcional (cookie) — no login |
 
 ### Planificados (ver ProductSpec)
 
@@ -117,8 +117,8 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de regis
 |--------|------|-------------|
 | `GET` | `/library` | Lista PDFs desde S3 + metadata |
 | `GET` | `/library/{key}/url` | Presigned GET para preview |
-| `POST` | `/sessions` | Crear sesión role play |
-| `PATCH` | `/sessions/{id}` | Timer, estado, cerrar |
+| `POST` | `/sessions` | Crear **actividad** role play |
+| `PATCH` | `/sessions/{id}` | Timer, estado, cerrar actividad |
 | `POST` | `/sessions/{id}/reviews/claim` | Participante elige nombre |
 | `POST` | `/sessions/{id}/reviews` | Publicar review |
 | `GET` | `/sessions/{id}/export` | Reporte PDF/imagen |

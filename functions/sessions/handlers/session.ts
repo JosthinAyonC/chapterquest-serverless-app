@@ -10,13 +10,13 @@ export async function handler(event: APIGatewayProxyEventV2) {
 
   switch (event.routeKey) {
     case 'POST /sessions':
-      return notImplemented('Create role-play session');
+      return notImplemented('Create role-play activity');
     case 'GET /sessions/{sessionId}':
-      return notImplemented('Get session');
+      return notImplemented('Get activity');
     case 'PATCH /sessions/{sessionId}':
-      return notImplemented('Update session / timer');
+      return notImplemented('Update activity / timer');
     case 'POST /sessions/{sessionId}/close':
-      return notImplemented('Close session');
+      return notImplemented('Close activity');
     case 'POST /sessions/{sessionId}/reviews/claim':
       return notImplemented('Claim participant for review');
     case 'POST /sessions/{sessionId}/reviews':

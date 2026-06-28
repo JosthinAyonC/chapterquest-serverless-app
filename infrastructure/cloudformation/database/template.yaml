@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ChapterQuest database — DynamoDB tables for LitCircle
+Description: ChapterQuest database — DynamoDB (Users optional profile + Activities role play)
 
 Parameters:
   Env:
