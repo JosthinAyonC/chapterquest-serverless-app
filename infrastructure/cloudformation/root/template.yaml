@@ -23,7 +23,11 @@ Parameters:
   FrontendOrigin:
     Type: String
     Default: https://placeholder.cloudfront.net
-    Description: CORS origin for uploads bucket; update after first deploy
+    Description: CORS origin for library bucket; update after first deploy
+  LibraryPrefix:
+    Type: String
+    Default: library/
+    Description: S3 prefix for curated PDF catalog
 
 Resources:
   NetworkingStack:
@@ -43,6 +47,7 @@ Resources:
       Parameters:
         Env: !Ref Env
         FrontendOrigin: !Ref FrontendOrigin
+        LibraryPrefix: !Ref LibraryPrefix
 
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
@@ -66,10 +71,9 @@ Resources:
         ApiCertificateArn: !GetAtt NetworkingStack.Outputs.ApiCertificateArn
         CustomApiDomainHost: !GetAtt NetworkingStack.Outputs.ApiDomainName
         UsersTableName: !GetAtt DatabaseStack.Outputs.UsersTableName
-        BooksTableName: !GetAtt DatabaseStack.Outputs.BooksTableName
-        ReviewsTableName: !GetAtt DatabaseStack.Outputs.ReviewsTableName
-        CommentsTableName: !GetAtt DatabaseStack.Outputs.CommentsTableName
-        UploadsBucketName: !GetAtt StorageStack.Outputs.UploadsBucketName
+        SessionsTableName: !GetAtt DatabaseStack.Outputs.SessionsTableName
+        LibraryBucketName: !GetAtt StorageStack.Outputs.LibraryBucketName
+        LibraryPrefix: !GetAtt StorageStack.Outputs.LibraryPrefix
 
   FrontendStack:
     Type: AWS::CloudFormation::Stack
@@ -89,10 +93,16 @@ Resources:
 Outputs:
   ApiEndpoint:
     Value: !GetAtt ApiStack.Outputs.ApiEndpoint
+  WebSocketEndpoint:
+    Value: !GetAtt ApiStack.Outputs.WebSocketEndpoint
   FrontendUrl:
     Value: !GetAtt FrontendStack.Outputs.FrontendUrl
   FrontendBucketName:
     Value: !GetAtt StorageStack.Outputs.FrontendBucketName
+  LibraryBucketName:
+    Value: !GetAtt StorageStack.Outputs.LibraryBucketName
+  LibraryPrefix:
+    Value: !GetAtt StorageStack.Outputs.LibraryPrefix
   CloudFrontDistributionId:
     Value: !GetAtt FrontendStack.Outputs.CloudFrontDistributionId
   CloudFrontDomainName:

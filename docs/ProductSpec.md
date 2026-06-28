@@ -80,7 +80,7 @@ flowchart TD
 
 | Aspecto | Decisión |
 |---------|----------|
-| Origen de libros | Directorio en bucket S3 (`{env}-chapterquest-uploads`, prefijo acordado ej. `library/`) |
+| Origen de libros | Bucket S3 `{env}-chapterquest-library`, prefijo `library/` |
 | Quién sube | Curador/admin (CLI, consola AWS, script interno) — **no** el usuario final |
 | Metadatos | Preferencia: **metadata nativa de objeto S3** (`x-amz-meta-*`) para autor, título, etc. |
 | CRUD en app | **No** — evitar mantener servicio duplicado si metadata basta |
@@ -277,7 +277,7 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 
 | Entidad | Almacén | Propósito |
 |---------|---------|-----------|
-| **Book (catálogo)** | S3 + metadata | Fuente de verdad; DynamoDB opcional solo si metadata S3 no alcanza |
+| **Book (catálogo)** | S3 `{env}-chapterquest-library` + metadata | Fuente de verdad; sin tabla Books |
 | **Session** | DynamoDB | Host, libro, 6 participantes, roles, estado, timer |
 | **Review** | DynamoDB | Texto, sessionId, participantSlot, timestamp |
 | **Connection** | DynamoDB | connectionId WebSocket ↔ sessionId |

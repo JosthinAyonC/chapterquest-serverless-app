@@ -9,14 +9,11 @@ Especificación funcional del producto: [`docs/ProductSpec.md`](../docs/ProductS
 ```text
 functions/
 ├── common/           # Utilidades compartidas (http, logger, dynamo, models)
-├── auth/             # Health check y futura autenticación
+├── auth/             # Health check
 ├── users/            # Perfiles de invitado
-├── books/            # Biblioteca S3 (list + presigned preview) — planificado
-├── sessions/         # Sesiones role play — planificado
-├── reviews/          # Mural + claim participante — planificado
-├── ws/               # WebSocket handlers — planificado
-├── comments/         # Reservado
-├── roleplay/         # Lógica compartida role play (opcional)
+├── library/          # Catálogo S3 (list + preview URL)
+├── sessions/         # Role play, timer, reviews, export
+├── ws/               # WebSocket connect / disconnect / message
 └── local/            # Servidor Express para desarrollo local
 ```
 
@@ -96,8 +93,9 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de regis
 |---------|--------|---------|
 | Lambda | `{env}-function-{name}` | `dev-function-health` |
 | IAM Role | `{env}-role-function-{name}` | `dev-role-function-health` |
-| DynamoDB | `{env}-chapterquest-{table}` | `dev-chapterquest-users` |
-| S3 | `{env}-chapterquest-{purpose}` | `dev-chapterquest-uploads` |
+| DynamoDB | `{env}-chapterquest-{table}` | `dev-chapterquest-users`, `dev-chapterquest-sessions` |
+| S3 library | `{env}-chapterquest-library` | PDFs curados bajo `library/` |
+| S3 frontend | `{env}-chapterquest-frontend` | Hosting estático |
 
 ## Runtime
 

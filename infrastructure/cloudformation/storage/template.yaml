@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ChapterQuest storage — S3 frontend hosting and document uploads
+Description: ChapterQuest storage — S3 frontend hosting and curated library bucket
 
 Parameters:
   Env:
@@ -7,7 +7,11 @@ Parameters:
     AllowedValues: [dev, prod]
   FrontendOrigin:
     Type: String
-    Description: Allowed CORS origin for uploads bucket (CloudFront URL or custom domain)
+    Description: Allowed CORS origin for library bucket (CloudFront URL or custom domain)
+  LibraryPrefix:
+    Type: String
+    Default: library/
+    Description: S3 prefix for curated PDF catalog (admin uploads only)
 
 Resources:
   FrontendBucket:
@@ -26,10 +30,10 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  UploadsBucket:
+  LibraryBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${Env}-chapterquest-uploads
+      BucketName: !Sub ${Env}-chapterquest-library
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -44,7 +48,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders: ['*']
-            AllowedMethods: [GET, PUT, POST, HEAD]
+            AllowedMethods: [GET, HEAD]
             AllowedOrigins:
               - !Ref FrontendOrigin
             MaxAge: 3600
@@ -58,11 +62,15 @@ Outputs:
     Value: !GetAtt FrontendBucket.Arn
     Export:
       Name: !Sub ${Env}-chapterquest-frontend-bucket-arn
-  UploadsBucketName:
-    Value: !Ref UploadsBucket
+  LibraryBucketName:
+    Value: !Ref LibraryBucket
     Export:
-      Name: !Sub ${Env}-chapterquest-uploads-bucket
-  UploadsBucketArn:
-    Value: !GetAtt UploadsBucket.Arn
+      Name: !Sub ${Env}-chapterquest-library-bucket
+  LibraryBucketArn:
+    Value: !GetAtt LibraryBucket.Arn
     Export:
-      Name: !Sub ${Env}-chapterquest-uploads-bucket-arn
+      Name: !Sub ${Env}-chapterquest-library-bucket-arn
+  LibraryPrefix:
+    Value: !Ref LibraryPrefix
+    Export:
+      Name: !Sub ${Env}-chapterquest-library-prefix

@@ -6,7 +6,7 @@ Visión técnica de la plataforma. La definición funcional del producto está e
 
 ## Visión general
 
-LitCircle es una plataforma serverless en AWS orientada a **sesiones de círculo literario en escuelas**: biblioteca curada en S3, API REST para sesiones/reviews, y **WebSocket API** (planificado) para sincronía en aula.
+LitCircle es una plataforma serverless en AWS orientada a **sesiones de círculo literario en escuelas**: biblioteca curada en S3, API REST para sesiones/reviews, y **WebSocket API** para sincronía en aula.
 
 ```mermaid
 flowchart TD
@@ -14,17 +14,16 @@ flowchart TD
   user --> cf[CloudFront]
   cf --> s3web[S3 frontend hosting]
   user --> apigw[API Gateway HTTP API]
-  user --> wss[API Gateway WebSocket - planificado]
+  user --> wss[API Gateway WebSocket API]
   apigw --> lusers[Lambda users]
-  apigw --> llibrary[Lambda library - planificado]
-  apigw --> lsessions[Lambda sessions - planificado]
-  apigw --> lreviews[Lambda reviews - planificado]
-  wss --> lws[Lambda ws handlers - planificado]
+  apigw --> llibrary[Lambda library]
+  apigw --> lsessions[Lambda sessions]
+  wss --> lws[Lambda ws handlers]
   lusers --> ddbUsers[(DynamoDB Users)]
-  lsessions --> ddbSessions[(DynamoDB Sessions - planificado)]
-  lreviews --> ddbReviews[(DynamoDB Reviews)]
-  llibrary --> s3library[S3 library prefix]
+  lsessions --> ddbSessions[(DynamoDB Sessions)]
+  llibrary --> s3library[S3 library bucket]
   lsessions --> s3library
+  lws --> ddbSessions
   subgraph cicd [GitHub Actions OIDC]
     gha[Workflows] --> cfn[CloudFormation deploy]
   end
@@ -63,23 +62,21 @@ flowchart LR
 | Stack | Recursos |
 |-------|----------|
 | `networking` | ACM certs, Route53 (condicional) |
-| `storage` | S3 frontend + uploads (`library/` para PDFs curados) |
-| `database` | DynamoDB Users, Books*, Reviews, Comments |
-| `api` | HTTP API + Lambdas + roles IAM |
+| `storage` | S3 frontend + **library** (`{env}-chapterquest-library`, prefijo `library/`) |
+| `database` | DynamoDB **Users**, **Sessions** (single-table + GSI1 + TTL) |
+| `api` | HTTP API + WebSocket API + Lambdas + roles IAM |
 | `frontend` | CloudFront OAC + bucket policy |
-
-\* Tabla Books puede quedar **opcional** si el catálogo se resuelve solo con S3 metadata (ver ProductSpec §4.2).
 
 ---
 
 ## Biblioteca curada (S3)
 
-**Decisión de producto:** no hay upload desde la UI. El curador sube PDFs al bucket `{env}-chapterquest-uploads` bajo un prefijo (ej. `library/`).
+**Decisión de producto:** no hay upload desde la UI. El curador sube PDFs al bucket `{env}-chapterquest-library` bajo el prefijo `library/`.
 
 ```mermaid
 sequenceDiagram
   participant CUR as Curador
-  participant S3 as S3 uploads
+  participant S3 as S3 library
   participant L as Lambda library
   participant FE as Frontend
 
@@ -87,7 +84,7 @@ sequenceDiagram
   FE->>L: GET /library
   L->>S3: ListObjectsV2 + HeadObject
   L-->>FE: Catálogo JSON
-  FE->>L: GET /library/{key}/url
+  FE->>L: GET /library/{key}/preview-url
   L-->>FE: Presigned GET
   FE->>S3: Descarga PDF para preview
 ```
@@ -151,25 +148,18 @@ sequenceDiagram
 
 Invitado: unicidad por username, cookie en frontend.
 
-### Sessions (planificado)
+### Sessions (desplegado en IaC — lógica pendiente)
+
+Tabla `{env}-chapterquest-sessions` con TTL en atributo `ttl` y **GSI1** para lookup por código de acceso.
 
 | Atributo | Valor |
 |----------|-------|
 | PK | `SESSION#<sessionId>` |
-| SK | `METADATA` \| `PARTICIPANT#<n>` \| `REVIEW#<n>` |
+| SK | `METADATA` \| `PARTICIPANT#<n>` \| `REVIEW#<n>` \| `CONNECTION#<id>` |
+| GSI1PK | `CODE#<accessCode>` |
+| GSI1SK | `SESSION#<sessionId>` |
 
-GSI opcional: `HOST#<token>` para recuperar sesión activa.
-
-### Reviews (planificado — puede reutilizar tabla existente)
-
-| Atributo | Valor |
-|----------|-------|
-| PK | `SESSION#<sessionId>` |
-| SK | `REVIEW#<participantSlot>` |
-
-### Books (tabla existente — uso TBD)
-
-Puede servir como índice cacheado si metadata S3 resulta insuficiente. **Preferencia cliente:** evitar CRUD duplicado.
+Reviews y conexiones WebSocket viven en la misma tabla (single-table design).
 
 ---
 
@@ -201,14 +191,13 @@ handler  →  service  →  repository  →  DynamoDB / S3
 
 Servicios previstos por dominio:
 
-| Servicio | Rutas / triggers |
-|----------|------------------|
-| `auth` | `GET /health` |
-| `users` | `POST /users/guest` |
-| `library` | `GET /library`, presigned preview |
-| `sessions` | CRUD sesión, timer, ruleta |
-| `reviews` | claim participante, mural, export |
-| `ws` | connect, message, disconnect |
+| Servicio | Rutas / triggers | Estado IaC |
+|----------|------------------|------------|
+| `auth` | `GET /health` | ✅ |
+| `users` | `POST /users/guest` | ✅ |
+| `library` | `GET /library`, `GET /library/{key}/preview-url` | ✅ stub |
+| `sessions` | CRUD sesión, reviews, export, by-code | ✅ stub |
+| `ws` | `$connect`, `$disconnect`, `$default` | ✅ stub |
 
 ---
 

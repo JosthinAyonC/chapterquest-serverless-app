@@ -34,4 +34,11 @@ export function parseBody<T>(event: APIGatewayProxyEventV2): T | null {
   }
 }
 
+export function notImplemented(feature: string): ApiResponse {
+  return jsonResponse(501, {
+    error: 'not_implemented',
+    message: `${feature} — planned for an upcoming iteration.`,
+  });
+}
+
 export type LambdaResult = APIGatewayProxyResultV2;

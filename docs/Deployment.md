@@ -98,7 +98,32 @@ aws cloudformation describe-stacks \
 
 Actualiza `VITE_API_BASE_URL` en GitHub Variables con el `ApiEndpoint`.
 
-Actualiza `FrontendOrigin` en `infrastructure/environments/dev/params.env` con la URL de CloudFront y redeploy para que CORS del bucket de uploads sea correcto.
+Actualiza `FrontendOrigin` en `infrastructure/environments/*/params.env` con la URL de CloudFront y redeploy para que CORS del bucket **library** sea correcto.
+
+**Outputs nuevos del stack:** `WebSocketEndpoint`, `LibraryBucketName`, `LibraryPrefix`.
+
+---
+
+## Migración de stack (jun 2026)
+
+El stack se alineó con [ProductSpec.md](./ProductSpec.md). Al redeploy:
+
+| Eliminado | Reemplazo |
+|-----------|-----------|
+| DynamoDB `books`, `reviews`, `comments` | Tabla **`sessions`** (single-table) |
+| S3 `{env}-chapterquest-uploads` | S3 **`{env}-chapterquest-library`** |
+| Lambdas solo health + guest | + library, sessions, ws (stubs 501) |
+| Solo HTTP API | HTTP API + **WebSocket API** |
+
+**Antes de prod:** si tenías PDFs en `*-uploads`, cópialos a `*-library/library/` con metadata antes del deploy. CloudFormation **eliminará** recursos que ya no están en el template.
+
+Subir un PDF curado (admin):
+
+```bash
+aws s3 cp book.pdf s3://dev-chapterquest-library/library/book.pdf \
+  --metadata title="Charlotte's Web",author="E.B. White",language=en \
+  --profile litcircle
+```
 
 ---
 
@@ -118,8 +143,8 @@ Manual:
 
 ```bash
 pnpm install
-pnpm dev:frontend     # Vite → :5173
-pnpm dev:api          # Express → :3001, usa credenciales AWS CLI
+pnpm client            # Vite → :5173
+pnpm api               # Express → :3001
 curl http://localhost:3001/health
 ```
 
@@ -175,7 +200,7 @@ Resumen: handler → build esbuild → ruta local → recurso en `api/template.y
 |----------|----------|
 | OIDC assume role falla | Verifica `sub` en bootstrap coincide con org/repo/rama |
 | Lambda 502 | Revisa logs en CloudWatch; confirma S3 key del artefacto |
-| CORS en uploads | Actualiza `FrontendOrigin` con URL real de CloudFront |
+| CORS en library bucket | Actualiza `FrontendOrigin` con URL real de CloudFront |
 | Cert ACM pendiente | Hosted zone debe estar en la misma cuenta; espera validación DNS |
 
 ---
