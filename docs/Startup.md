@@ -2,6 +2,8 @@
 
 Guía de arranque: desde cero hasta el primer deploy automático con GitHub Actions **sin guardar access keys en GitHub**.
 
+**Producto:** definición funcional y roadmap en [ProductSpec.md](./ProductSpec.md).
+
 ---
 
 ## ¿Qué hace el comando bootstrap?

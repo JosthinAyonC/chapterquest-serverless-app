@@ -1,39 +1,50 @@
 # Architecture — LitCircle (ChapterQuest)
 
+Visión técnica de la plataforma. La definición funcional del producto está en **[ProductSpec.md](./ProductSpec.md)**.
+
+---
+
 ## Visión general
 
-LitCircle es una plataforma serverless en AWS. El frontend se sirve desde CloudFront + S3; la API expone HTTP API Gateway que invoca Lambdas; los datos viven en DynamoDB y S3.
+LitCircle es una plataforma serverless en AWS orientada a **sesiones de círculo literario en escuelas**: biblioteca curada en S3, API REST para sesiones/reviews, y **WebSocket API** (planificado) para sincronía en aula.
 
 ```mermaid
 flowchart TD
-  user[Usuario] --> cf[CloudFront]
+  user[Usuario / Host / Estudiante]
+  user --> cf[CloudFront]
   cf --> s3web[S3 frontend hosting]
   user --> apigw[API Gateway HTTP API]
-  apigw --> lhealth[Lambda health]
-  apigw --> lusers[Lambda users - futuro]
+  user --> wss[API Gateway WebSocket - planificado]
+  apigw --> lusers[Lambda users]
+  apigw --> llibrary[Lambda library - planificado]
+  apigw --> lsessions[Lambda sessions - planificado]
+  apigw --> lreviews[Lambda reviews - planificado]
+  wss --> lws[Lambda ws handlers - planificado]
   lusers --> ddbUsers[(DynamoDB Users)]
-  lbooks[Lambda books - futuro] --> ddbBooks[(DynamoDB Books)]
-  lbooks --> s3uploads[S3 uploads presigned]
-  apigw --> lreviews[Lambda reviews - futuro]
+  lsessions --> ddbSessions[(DynamoDB Sessions - planificado)]
   lreviews --> ddbReviews[(DynamoDB Reviews)]
+  llibrary --> s3library[S3 library prefix]
+  lsessions --> s3library
   subgraph cicd [GitHub Actions OIDC]
-    gha[Workflows] -->|AssumeRole| cfn[CloudFormation deploy]
+    gha[Workflows] --> cfn[CloudFormation deploy]
   end
 ```
+
+---
 
 ## Capas del monorepo
 
 | Directorio | Responsabilidad |
 |------------|-----------------|
-| `frontend/` | SPA React — UI LitCircle |
+| `frontend/` | SPA React — landing, biblioteca, guía, juguemos, review |
 | `functions/` | Handlers Lambda + servidor local Express |
 | `infrastructure/` | CloudFormation modular por capa |
-| `scripts/` | Build esbuild, deploy stacks |
-| `.github/workflows/` | CI/CD única fuente de deploy |
+| `scripts/` | Build, deploy stacks y frontend |
+| `.github/workflows/` | CI/CD con detección de cambios por path |
+
+---
 
 ## Infraestructura (nested stacks)
-
-El stack raíz `chapterquest-root-{env}` orquesta:
 
 ```mermaid
 flowchart LR
@@ -52,99 +63,135 @@ flowchart LR
 | Stack | Recursos |
 |-------|----------|
 | `networking` | ACM certs, Route53 (condicional) |
-| `storage` | S3 frontend + uploads |
-| `database` | DynamoDB Users, Books, Reviews, Comments |
+| `storage` | S3 frontend + uploads (`library/` para PDFs curados) |
+| `database` | DynamoDB Users, Books*, Reviews, Comments |
 | `api` | HTTP API + Lambdas + roles IAM |
 | `frontend` | CloudFront OAC + bucket policy |
 
-Parámetro `EnableCustomDomain` (default `false`): cuando compres `litcircle.com`, activa dominios custom sin reescribir templates.
+\* Tabla Books puede quedar **opcional** si el catálogo se resuelve solo con S3 metadata (ver ProductSpec §4.2).
 
-## DynamoDB — diseño de claves
+---
 
-Diseño single-table style por entidad, expandible con GSIs.
+## Biblioteca curada (S3)
 
-### Users
+**Decisión de producto:** no hay upload desde la UI. El curador sube PDFs al bucket `{env}-chapterquest-uploads` bajo un prefijo (ej. `library/`).
+
+```mermaid
+sequenceDiagram
+  participant CUR as Curador
+  participant S3 as S3 uploads
+  participant L as Lambda library
+  participant FE as Frontend
+
+  CUR->>S3: PutObject PDF + x-amz-meta-*
+  FE->>L: GET /library
+  L->>S3: ListObjectsV2 + HeadObject
+  L-->>FE: Catálogo JSON
+  FE->>L: GET /library/{key}/url
+  L-->>FE: Presigned GET
+  FE->>S3: Descarga PDF para preview
+```
+
+**Metadata recomendada:** `title`, `author`, `language`, `grade` (ver ProductSpec).
+
+**Preview:** presigned URL + visor cliente (PDF.js / react-pdf — por decidir).
+
+---
+
+## Sesiones y role play
+
+```mermaid
+stateDiagram-v2
+  [*] --> draft: Host crea sesión
+  draft --> running: Empecemos + timer
+  running --> review: Tiempo = 0 + host confirma
+  review --> closed: Host cierra sesión
+  closed --> [*]
+```
+
+Persistencia propuesta en DynamoDB (`Sessions`): participantes, roles, libro, timer, estado, reviews.
+
+Sincronía en tiempo real (timer, mural): **API Gateway WebSocket** + tabla de conexiones.
+
+---
+
+## Flujo de review
+
+```mermaid
+sequenceDiagram
+  participant H as Host
+  participant API as API
+  participant P as Participante
+  participant D as DynamoDB
+
+  H->>API: Abre fase review
+  API-->>H: QR + código + enlace
+  P->>API: Entra con código
+  P->>API: Claim PARTICIPANT#slot
+  API->>D: Conditional write nombre
+  alt slot libre
+    API-->>P: 200 OK → formulario review
+    P->>API: POST review
+  else ya tomado
+    API-->>P: 409 Conflict
+  end
+  H->>API: GET mural + export
+```
+
+---
+
+## DynamoDB — diseño actual y evolución
+
+### Users (implementado)
 
 | Atributo | Valor |
 |----------|-------|
 | PK | `USER#<username>` |
 | SK | `PROFILE` |
 
-Unicidad de invitado: `GetItem` por PK antes de crear. Atributos: `type=guest`, `createdAt`, `lastSeenAt`.
+Invitado: unicidad por username, cookie en frontend.
 
-### Books
-
-| Atributo | Valor |
-|----------|-------|
-| PK | `BOOK#<bookId>` |
-| SK | `METADATA` |
-| GSI1PK | `USER#<ownerId>` |
-| GSI1SK | `BOOK#<bookId>` |
-
-### Reviews
+### Sessions (planificado)
 
 | Atributo | Valor |
 |----------|-------|
-| PK | `BOOK#<bookId>` |
-| SK | `REVIEW#<reviewId>` |
-| GSI1PK | `USER#<authorId>` |
-| GSI1SK | `REVIEW#<reviewId>` |
+| PK | `SESSION#<sessionId>` |
+| SK | `METADATA` \| `PARTICIPANT#<n>` \| `REVIEW#<n>` |
 
-### Comments
+GSI opcional: `HOST#<token>` para recuperar sesión activa.
+
+### Reviews (planificado — puede reutilizar tabla existente)
 
 | Atributo | Valor |
 |----------|-------|
-| PK | `BOOK#<bookId>` |
-| SK | `COMMENT#<timestamp>#<commentId>` |
+| PK | `SESSION#<sessionId>` |
+| SK | `REVIEW#<participantSlot>` |
 
-Alternativa futura: PK `REVIEW#<reviewId>` para hilos por reseña.
+### Books (tabla existente — uso TBD)
 
-## Flujo MVP: invitado
+Puede servir como índice cacheado si metadata S3 resulta insuficiente. **Preferencia cliente:** evitar CRUD duplicado.
+
+---
+
+## Flujo implementado: invitado
 
 ```mermaid
 sequenceDiagram
   participant U as Usuario
   participant FE as Frontend
-  participant C as Cookie
   participant API as API Gateway
   participant L as Lambda users
   participant D as DynamoDB
 
-  U->>FE: Elige nombre invitado
-  FE->>C: Guarda litcircle_guest_name
-  FE->>U: Muestra banner "navegas como @nombre"
-  Note over FE,API: Próxima iteración
+  U->>FE: Elige nombre en /profile
   FE->>API: POST /users/guest
   API->>L: Validar unicidad
-  L->>D: GetItem USER#username
-  alt nombre libre
-    L->>D: PutItem perfil guest
-    L-->>FE: 201 Created
-  else nombre ocupado
-    L-->>FE: 409 Conflict
-  end
+  L->>D: GetItem / PutItem
+  L-->>FE: 201 o 409
+  FE->>FE: Cookie + banner @nombre
 ```
 
-## Flujo MVP: upload PDF (presigned URLs)
-
-```mermaid
-sequenceDiagram
-  participant U as Usuario
-  participant FE as Frontend
-  participant API as API Gateway
-  participant L as Lambda books
-  participant S3 as S3 uploads
-
-  U->>FE: Selecciona PDF
-  FE->>API: POST /books/upload-url
-  API->>L: Genera presigned PUT
-  L-->>FE: URL firmada + bookId
-  FE->>S3: PUT PDF directo
-  Note over S3: Bucket privado, CORS solo origen CloudFront
-  FE->>API: POST /books/{id}/confirm
-```
-
-**No** usar bucket policy con `Referer` — es falsificable. Presigned URLs + CORS + IAM least privilege.
+---
 
 ## Backend — capas Lambda
 
@@ -152,18 +199,58 @@ sequenceDiagram
 handler  →  service  →  repository  →  DynamoDB / S3
 ```
 
-- **Handler**: adapta evento API Gateway, sin lógica de negocio.
-- **Service**: reglas de dominio.
-- **Repository**: acceso a datos.
+Servicios previstos por dominio:
+
+| Servicio | Rutas / triggers |
+|----------|------------------|
+| `auth` | `GET /health` |
+| `users` | `POST /users/guest` |
+| `library` | `GET /library`, presigned preview |
+| `sessions` | CRUD sesión, timer, ruleta |
+| `reviews` | claim participante, mural, export |
+| `ws` | connect, message, disconnect |
+
+---
+
+## Frontend — mapa de rutas (objetivo)
+
+| Ruta | Sección | Estado |
+|------|---------|--------|
+| `/` | Landing | Placeholder |
+| `/library` | Biblioteca | Placeholder |
+| `/guide` | Guía | Por crear |
+| `/play` | Juguemos | Por crear |
+| `/play/:sessionId/review` | Mural host | Por crear |
+| `/review/:code` | Entrada participante | Por crear |
+| `/profile` | Perfil invitado | Implementado |
+
+Rutas legacy `/reviews`, `/community` se deprecarán o redirigirán en favor del flujo de sesión.
+
+---
 
 ## Seguridad
 
-- IAM: rol de ejecución **por Lambda**.
-- S3: Block Public Access; frontend solo vía CloudFront OAC.
-- DynamoDB: encryption at rest, PITR habilitado.
-- CI/CD: GitHub OIDC → IAM Role (sin access keys en secrets).
-- HTTPS: CloudFront y API Gateway por defecto.
+- IAM: rol de ejecución **por Lambda**
+- S3: Block Public Access; lectura PDF vía presigned URLs
+- DynamoDB: encryption at rest, PITR
+- CI/CD: GitHub OIDC (sin access keys de larga vida)
+- Host token para cerrar sesión (MVP); auth docente completa — decisión abierta
 
-## Entornos
+---
 
-Recursos aislados por prefijo `{env}-`. Ramas `dev` y `main` despliegan a entornos independientes vía GitHub Actions.
+## Entornos y build frontend
+
+| Variable | Dev | Prod |
+|----------|-----|------|
+| `VITE_APP_ENV` | `dev` | `prod` |
+| `VITE_API_BASE_URL` | ApiEndpoint stack dev | ApiEndpoint stack prod |
+
+CI inyecta ambas en `deploy-frontend`. Chip MUI visible solo en `dev` y `local`.
+
+---
+
+## Referencias
+
+- [ProductSpec.md](./ProductSpec.md) — SDD completo
+- [Deployment.md](./Deployment.md)
+- [functions/README.md](../functions/README.md)

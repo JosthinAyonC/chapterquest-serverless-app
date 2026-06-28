@@ -2,6 +2,8 @@
 
 Este directorio contiene las funciones Lambda de **ChapterQuest** (producto: **LitCircle**), organizadas por dominio.
 
+Especificación funcional del producto: [`docs/ProductSpec.md`](../docs/ProductSpec.md).
+
 ## Estructura por servicio
 
 ```text
@@ -9,10 +11,12 @@ functions/
 ├── common/           # Utilidades compartidas (http, logger, dynamo, models)
 ├── auth/             # Health check y futura autenticación
 ├── users/            # Perfiles de invitado
-├── books/            # Libros y PDFs
-├── reviews/
-├── comments/
-├── roleplay/
+├── books/            # Biblioteca S3 (list + presigned preview) — planificado
+├── sessions/         # Sesiones role play — planificado
+├── reviews/          # Mural + claim participante — planificado
+├── ws/               # WebSocket handlers — planificado
+├── comments/         # Reservado
+├── roleplay/         # Lógica compartida role play (opcional)
 └── local/            # Servidor Express para desarrollo local
 ```
 
@@ -71,7 +75,7 @@ Requisitos: Node 24, pnpm, AWS CLI configurado con acceso al entorno `dev`.
 ```bash
 # Desde la raíz del monorepo
 pnpm install
-pnpm dev:api          # Express en http://localhost:3001
+pnpm api              # Express en http://localhost:3001
 curl http://localhost:3001/health
 ```
 
@@ -100,9 +104,24 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de regis
 - **Local / CI**: Node 24 (`.nvmrc`, `engines` en package.json).
 - **Lambda en AWS**: `nodejs22.x` (runtime más reciente disponible en Lambda; se actualizará cuando AWS publique Node 24).
 
-## Endpoint actual
+## Endpoints
 
-```
-GET /health
-→ { "service": "chapterquest-api", "status": "healthy" }
-```
+### Implementados
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/users/guest` | Registro invitado (unicidad username) |
+
+### Planificados (ver ProductSpec)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/library` | Lista PDFs desde S3 + metadata |
+| `GET` | `/library/{key}/url` | Presigned GET para preview |
+| `POST` | `/sessions` | Crear sesión role play |
+| `PATCH` | `/sessions/{id}` | Timer, estado, cerrar |
+| `POST` | `/sessions/{id}/reviews/claim` | Participante elige nombre |
+| `POST` | `/sessions/{id}/reviews` | Publicar review |
+| `GET` | `/sessions/{id}/export` | Reporte PDF/imagen |
+| WebSocket | `$connect`, `$default`, `$disconnect` | Sync timer y mural |

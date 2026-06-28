@@ -2,20 +2,38 @@
 
 > **LitCircle** es el producto. **ChapterQuest** es el nombre técnico del repositorio y la plataforma serverless que lo impulsa.
 
-Plataforma de lectura social serverless en AWS. Esta iteración establece la **fundación**: monorepo, IaC, CI/CD, shell de frontend y backend. Las features de negocio llegan en iteraciones siguientes.
+Plataforma web para **círculos literarios escolares**: lectura curada, role play colaborativo con 6 roles, cronómetro facilitado y reviews post-actividad. Desplegada serverless en AWS.
+
+**Tagline:** *Read, Share, Learn Together*
 
 ---
 
-## MVP (próxima prioridad)
+## ¿Qué hace LitCircle?
 
-1. **Invitado sin fricción** — El usuario elige un nombre; se guarda en cookie del navegador con aviso en UI. Se persiste en DynamoDB (`Users`) para validar unicidad ("este nombre ya está en uso").
-2. **Upload de PDF** — Subida vía **presigned URLs** generadas por Lambda (no bucket policy con Referer). CORS restringido al origen del frontend.
-3. **Lectura de PDF** — Visor integrado en el frontend (evaluar librerías en iteración MVP).
-4. **Health check** — `GET /health` operativo (único endpoint implementado hoy).
+| Sección | Propósito |
+|---------|-----------|
+| **Landing** | Bienvenida, qué es un círculo literario, animación (futuro Three.js) |
+| **Biblioteca** | Catálogo de PDFs curados desde S3 (sin upload público) |
+| **Guía** | Explicación del role play y los 6 roles → CTA «Empecemos» |
+| **Juguemos** | Dinámica: 6 nombres, ruleta de roles, libro, cronómetro, review |
 
-### Roadmap posterior
+Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs/ProductSpec.md)** (SDD).
 
-Reseñas, comentarios, roleplay, progreso de lectura, biblioteca personal, notificaciones.
+---
+
+## Estado actual vs planificado
+
+| Capacidad | Estado |
+|-----------|--------|
+| Infra AWS (dev + prod), CI/CD OIDC | ✅ |
+| Registro invitado (`POST /users/guest`, cookie) | ✅ |
+| Chip entorno (dev / local vs prod) | ✅ |
+| Landing con copy cliente | 🔲 |
+| Biblioteca S3 + preview PDF | 🔲 |
+| Guía + 6 roles | 🔲 |
+| Juguemos (ruleta, timer, sesión) | 🔲 |
+| WebSockets (sync en aula) | 🔲 |
+| Review QR / mural / export | 🔲 |
 
 ---
 
@@ -23,8 +41,8 @@ Reseñas, comentarios, roleplay, progreso de lectura, biblioteca personal, notif
 
 | Capa | Tecnología |
 |------|------------|
-| Frontend | React, TypeScript, Vite, React Router |
-| Backend | AWS Lambda, API Gateway HTTP API, TypeScript |
+| Frontend | React, TypeScript, Vite, React Router, MUI (chips) |
+| Backend | AWS Lambda, API Gateway HTTP API (+ WebSocket planificado), TypeScript |
 | Datos | DynamoDB, S3 |
 | Infra | CloudFormation (nested stacks) |
 | CI/CD | GitHub Actions + OIDC |
@@ -40,7 +58,7 @@ chapterquest-serverless-app/
 ├── functions/         # Lambdas + servidor local Express
 ├── infrastructure/    # CloudFormation + parámetros por entorno
 ├── scripts/           # Build, deploy
-├── docs/              # Architecture.md, Deployment.md
+├── docs/              # ProductSpec, Architecture, Deployment, Startup
 └── .github/workflows/ # ci-cd.yml (único pipeline)
 ```
 
@@ -48,56 +66,52 @@ Ver [`functions/README.md`](functions/README.md) para agregar nuevas Lambdas.
 
 ---
 
-## Requisitos locales
+## Desarrollo local
 
-- **Node.js 24** (`nvm use` lee `.nvmrc`)
-- **pnpm 10+** (`corepack enable && corepack prepare pnpm@10.12.1 --activate`)
-- **AWS CLI** configurado (para dev local contra recursos `dev` en la nube)
+- **Node.js 24** (`nvm use`)
+- **pnpm 10+**
+- **AWS CLI** con perfil con acceso al entorno `dev` (DynamoDB remoto)
 
 ```bash
 pnpm install
-pnpm dev:frontend    # http://localhost:5173
-pnpm dev:api         # http://localhost:3001
+pnpm client           # http://localhost:5173
+pnpm api              # http://localhost:3001
 ```
+
+Variables: `frontend/.env` (`VITE_API_BASE_URL`, `VITE_APP_ENV=local`) y `functions/.env` (`AWS_PROFILE`, `AWS_REGION`).
 
 ---
 
 ## Entornos
 
-| Rama | Entorno AWS | URLs (sin dominio custom) |
-|------|-------------|---------------------------|
-| `develop` | dev | CloudFront `*.cloudfront.net`, API Gateway default |
-| `master` | prod | Idem |
+| Rama | Entorno | Frontend (prod actual) |
+|------|---------|------------------------|
+| `develop` | dev | CloudFront + chip «Test environment» |
+| `master` | prod | CloudFront sin chip |
 
-Cuando compres **litcircle.com**, activa `EnableCustomDomain=true` en `infrastructure/environments/*/params.env` y configura `HostedZoneId`. CloudFormation creará certificados ACM y registros Route53 automáticamente:
+| Recurso | Dev | Prod |
+|---------|-----|------|
+| Frontend | `d3isl53amscx76.cloudfront.net` | `d35dxri6348d76.cloudfront.net` |
 
-- `dev.litcircle.com` / `api-dev.litcircle.com`
-- `litcircle.com` / `api.litcircle.com`
-
----
-
-## Convención de nombres
-
-- Stacks: `chapterquest-root-{env}`, `chapterquest-api-{env}`, etc.
-- Lambdas: `{env}-function-{name}`
-- Tablas DynamoDB: `{env}-chapterquest-{table}`
+Dominio custom (`litcircle.com`): ver [Deployment.md](docs/Deployment.md).
 
 ---
 
 ## Documentación
 
-- **[Startup](docs/Startup.md)** — arranque desde cero, bootstrap OIDC, checklist
-- [Architecture](docs/Architecture.md) — diagramas y diseño de datos
-- [Deployment](docs/Deployment.md) — bootstrap AWS, dominio custom, troubleshooting
+| Documento | Contenido |
+|-----------|-----------|
+| **[ProductSpec.md](docs/ProductSpec.md)** | Especificación de producto (SDD) — fuente de verdad para iteraciones |
+| [Architecture.md](docs/Architecture.md) | Diagramas técnicos AWS, datos, flujos |
+| [Deployment.md](docs/Deployment.md) | Bootstrap, deploy, troubleshooting |
+| [Startup.md](docs/Startup.md) | Arranque desde cero |
 
 ---
 
-## Principios de diseño
+## Principios
 
-- Serverless first
-- Infrastructure as Code
-- Deploy solo vía GitHub Actions (OIDC, sin access keys de larga vida)
-- Least privilege IAM (rol de ejecución por Lambda)
-- Sin lógica de negocio en esta iteración — solo fundación sólida
+- Serverless first · Infrastructure as Code · Deploy vía GitHub Actions (OIDC)
+- Least privilege IAM · Biblioteca curada (no CRUD de libros en app)
+- Actividad presencial apoyada por digital; reviews pueden ser asíncronas
 
 **LitCircle** — *Every chapter is the beginning of a new adventure.*

@@ -1,5 +1,11 @@
 # Deployment — LitCircle (ChapterQuest)
 
+Guía de despliegue AWS, bootstrap OIDC, entornos dev/prod y troubleshooting.
+
+**Contexto de producto:** [ProductSpec.md](./ProductSpec.md) · **Arquitectura:** [Architecture.md](./Architecture.md)
+
+---
+
 > **¿Primera vez?** Lee [Startup.md](Startup.md) para el checklist completo (bootstrap OIDC, GitHub variables, primer push).
 
 ## Prerrequisitos

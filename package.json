@@ -8,8 +8,8 @@
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "lint": "pnpm -r run lint",
-    "dev:frontend": "pnpm --filter @chapterquest/frontend dev",
-    "dev:api": "pnpm --filter @chapterquest/functions dev",
+    "client": "pnpm --filter @chapterquest/frontend dev",
+    "api": "pnpm --filter @chapterquest/functions dev",
     "build:functions": "pnpm --filter @chapterquest/functions build",
     "build:frontend": "pnpm --filter @chapterquest/frontend build"
   },
