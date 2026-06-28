@@ -17,7 +17,7 @@ Plataforma web para **círculos literarios escolares** — sin login. Persiste l
 | **Guía** | Explicación del role play y los 6 roles → CTA «Empecemos» |
 | **Juguemos** | 6 nombres, ruleta, roster **nombre + rol**, cronómetro, review |
 
-Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs/ProductSpec.md)** (SDD).
+Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs/ProductSpec.md)** (SDD) · checklist: **[docs/Features.md](docs/Features.md)**
 
 ---
 
@@ -102,7 +102,8 @@ Dominio custom (`litcircle.com`): ver [Deployment.md](docs/Deployment.md).
 
 | Documento | Contenido |
 |-----------|-----------|
-| **[ProductSpec.md](docs/ProductSpec.md)** | Especificación de producto (SDD) — fuente de verdad para iteraciones |
+| **[ProductSpec.md](docs/ProductSpec.md)** | Especificación de producto (SDD) — fuente de verdad funcional |
+| **[Features.md](docs/Features.md)** | Backlog por feature con checklist y enlace al SDD |
 | [Architecture.md](docs/Architecture.md) | Diagramas técnicos AWS, datos, flujos |
 | [Deployment.md](docs/Deployment.md) | Bootstrap, deploy, troubleshooting |
 | [Startup.md](docs/Startup.md) | Arranque desde cero |

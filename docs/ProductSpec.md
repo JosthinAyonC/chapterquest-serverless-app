@@ -401,6 +401,7 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 
 ## 14. Referencias
 
+- [Features.md](./Features.md) — backlog por feature (checklist + enlace a este SDD)
 - [Architecture.md](./Architecture.md) — diagramas técnicos y AWS
 - [Deployment.md](./Deployment.md) — deploy y entornos
 - [Startup.md](./Startup.md) — bootstrap desde cero
