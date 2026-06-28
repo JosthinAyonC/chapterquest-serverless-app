@@ -3,6 +3,7 @@ export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
 }
 
+/** Perfil invitado opcional (cookie). No es login ni identidad en Juguemos. */
 export interface UserProfile {
   pk: string;
   sk: string;
@@ -12,32 +13,69 @@ export interface UserProfile {
   lastSeenAt: string;
 }
 
-export interface BookMetadata {
+export type ActivityStatus = 'draft' | 'running' | 'review' | 'closed';
+
+/** Actividad de role play — persiste en DynamoDB. API: /sessions */
+export interface ActivityMetadata {
   pk: string;
-  sk: string;
-  bookId: string;
-  title: string;
-  ownerId: string;
+  sk: 'METADATA';
+  sessionId: string;
+  accessCode: string;
+  hostToken: string;
+  status: ActivityStatus;
+  bookKey: string;
+  timerMinutes: number;
+  timerEndsAt?: string;
   createdAt: string;
+  updatedAt: string;
+  ttl?: number;
 }
 
-export interface Review {
+/** Estudiante dentro de una actividad — mostrar displayName + role en UI siempre */
+export interface ActivityParticipant {
   pk: string;
-  sk: string;
-  reviewId: string;
-  bookId: string;
-  authorId: string;
-  rating: number;
+  sk: `PARTICIPANT#${number}`;
+  slot: number;
+  displayName: string;
+  role: string;
+  claimedAt?: string;
+}
+
+export interface ActivityReview {
+  pk: string;
+  sk: `REVIEW#${number}`;
+  slot: number;
+  displayName: string;
+  role: string;
   content: string;
   createdAt: string;
 }
 
-export interface Comment {
+export interface ActivityConnection {
   pk: string;
-  sk: string;
-  commentId: string;
-  bookId: string;
-  authorId: string;
-  content: string;
-  createdAt: string;
+  sk: `CONNECTION#${string}`;
+  connectionId: string;
+  sessionId: string;
+  connectedAt: string;
 }
+
+export interface LibraryObjectMeta {
+  key: string;
+  title?: string;
+  author?: string;
+  language?: string;
+  grade?: string;
+  sizeBytes?: number;
+  lastModified?: string;
+}
+
+/** @deprecated Use ActivityMetadata */
+export type SessionStatus = ActivityStatus;
+/** @deprecated Use ActivityMetadata */
+export type SessionMetadata = ActivityMetadata;
+/** @deprecated Use ActivityParticipant */
+export type SessionParticipant = ActivityParticipant;
+/** @deprecated Use ActivityReview */
+export type SessionReview = ActivityReview;
+/** @deprecated Use ActivityConnection */
+export type SessionConnection = ActivityConnection;

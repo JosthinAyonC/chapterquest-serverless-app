@@ -10,10 +10,9 @@ const OUT_DIR = join(ROOT, 'dist');
 const HANDLER_DIRS = [
   'auth',
   'users',
-  'books',
-  'reviews',
-  'comments',
-  'roleplay',
+  'library',
+  'sessions',
+  'ws',
 ];
 
 function findHandlers() {

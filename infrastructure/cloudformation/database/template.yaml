@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ChapterQuest database — DynamoDB tables
+Description: ChapterQuest database — DynamoDB (Users optional profile + Activities role play)
 
 Parameters:
   Env:
@@ -27,15 +27,18 @@ Resources:
         - AttributeName: sk
           KeyType: RANGE
 
-  BooksTable:
+  SessionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${Env}-chapterquest-books
+      TableName: !Sub ${Env}-chapterquest-sessions
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       SSESpecification:
         SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
       AttributeDefinitions:
         - AttributeName: pk
           AttributeType: S
@@ -59,74 +62,13 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-
-  ReviewsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub ${Env}-chapterquest-reviews
-      BillingMode: PAY_PER_REQUEST
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-      AttributeDefinitions:
-        - AttributeName: pk
-          AttributeType: S
-        - AttributeName: sk
-          AttributeType: S
-        - AttributeName: gsi1pk
-          AttributeType: S
-        - AttributeName: gsi1sk
-          AttributeType: S
-      KeySchema:
-        - AttributeName: pk
-          KeyType: HASH
-        - AttributeName: sk
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        - IndexName: GSI1
-          KeySchema:
-            - AttributeName: gsi1pk
-              KeyType: HASH
-            - AttributeName: gsi1sk
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-
-  CommentsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub ${Env}-chapterquest-comments
-      BillingMode: PAY_PER_REQUEST
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-      AttributeDefinitions:
-        - AttributeName: pk
-          AttributeType: S
-        - AttributeName: sk
-          AttributeType: S
-      KeySchema:
-        - AttributeName: pk
-          KeyType: HASH
-        - AttributeName: sk
-          KeyType: RANGE
 
 Outputs:
   UsersTableName:
     Value: !Ref UsersTable
     Export:
       Name: !Sub ${Env}-chapterquest-users-table
-  BooksTableName:
-    Value: !Ref BooksTable
+  SessionsTableName:
+    Value: !Ref SessionsTable
     Export:
-      Name: !Sub ${Env}-chapterquest-books-table
-  ReviewsTableName:
-    Value: !Ref ReviewsTable
-    Export:
-      Name: !Sub ${Env}-chapterquest-reviews-table
-  CommentsTableName:
-    Value: !Ref CommentsTable
-    Export:
-      Name: !Sub ${Env}-chapterquest-comments-table
+      Name: !Sub ${Env}-chapterquest-sessions-table

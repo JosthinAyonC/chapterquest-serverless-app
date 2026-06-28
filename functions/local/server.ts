@@ -6,6 +6,8 @@ import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { handler as healthHandler } from '../auth/handlers/health';
 import { handler as guestHandler } from '../users/handlers/guest';
+import { handler as libraryHandler } from '../library/handlers/list';
+import { handler as sessionHandler } from '../sessions/handlers/session';
 import { docClient, tableName } from '../common/dynamo';
 
 const envFile = resolve(import.meta.dirname, '../.env');
@@ -37,14 +39,18 @@ app.use(express.json());
 
 function toApiGatewayEvent(
   req: express.Request,
+  routeKey?: string,
+  pathParameters?: Record<string, string>,
 ): APIGatewayProxyEventV2 {
+  const resolvedRouteKey = routeKey ?? `${req.method} ${req.path}`;
   return {
     version: '2.0',
-    routeKey: `${req.method} ${req.path}`,
+    routeKey: resolvedRouteKey,
     rawPath: req.path,
     rawQueryString: req.url.includes('?')
       ? req.url.split('?')[1] ?? ''
       : '',
+    pathParameters,
     headers: Object.fromEntries(
       Object.entries(req.headers).map(([k, v]) => [
         k,
@@ -65,7 +71,7 @@ function toApiGatewayEvent(
         userAgent: req.get('user-agent') ?? '',
       },
       requestId: `local-${Date.now()}`,
-      routeKey: `${req.method} ${req.path}`,
+      routeKey: resolvedRouteKey,
       stage: process.env.ENV ?? 'dev',
       time: new Date().toISOString(),
       timeEpoch: Date.now(),
@@ -79,9 +85,13 @@ async function invokeHandler(
   req: express.Request,
   res: express.Response,
   handler: (event: APIGatewayProxyEventV2) => Promise<unknown>,
+  routeKey?: string,
+  pathParameters?: Record<string, string>,
 ) {
   try {
-    const result = await handler(toApiGatewayEvent(req));
+    const result = await handler(
+      toApiGatewayEvent(req, routeKey, pathParameters),
+    );
     if (result && typeof result === 'object' && 'statusCode' in result) {
       const apiResult = result as {
         statusCode: number;
@@ -105,6 +115,72 @@ async function invokeHandler(
 
 app.get('/health', (req, res) => invokeHandler(req, res, healthHandler));
 app.post('/users/guest', (req, res) => invokeHandler(req, res, guestHandler));
+app.get('/library', (req, res) =>
+  invokeHandler(req, res, libraryHandler, 'GET /library'),
+);
+app.get('/library/:key/preview-url', (req, res) =>
+  invokeHandler(req, res, libraryHandler, 'GET /library/{key}/preview-url', {
+    key: req.params.key,
+  }),
+);
+app.post('/sessions', (req, res) =>
+  invokeHandler(req, res, sessionHandler, 'POST /sessions'),
+);
+app.get('/sessions/by-code/:accessCode', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'GET /sessions/by-code/{accessCode}',
+    { accessCode: req.params.accessCode },
+  ),
+);
+app.get('/sessions/:sessionId', (req, res) =>
+  invokeHandler(req, res, sessionHandler, 'GET /sessions/{sessionId}', {
+    sessionId: req.params.sessionId,
+  }),
+);
+app.patch('/sessions/:sessionId', (req, res) =>
+  invokeHandler(req, res, sessionHandler, 'PATCH /sessions/{sessionId}', {
+    sessionId: req.params.sessionId,
+  }),
+);
+app.post('/sessions/:sessionId/close', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'POST /sessions/{sessionId}/close',
+    { sessionId: req.params.sessionId },
+  ),
+);
+app.post('/sessions/:sessionId/reviews/claim', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'POST /sessions/{sessionId}/reviews/claim',
+    { sessionId: req.params.sessionId },
+  ),
+);
+app.post('/sessions/:sessionId/reviews', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'POST /sessions/{sessionId}/reviews',
+    { sessionId: req.params.sessionId },
+  ),
+);
+app.get('/sessions/:sessionId/export', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'GET /sessions/{sessionId}/export',
+    { sessionId: req.params.sessionId },
+  ),
+);
 
 async function verifyAwsAccess(): Promise<void> {
   const profile = process.env.AWS_PROFILE ?? '(default credential chain)';

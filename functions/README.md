@@ -2,17 +2,18 @@
 
 Este directorio contiene las funciones Lambda de **ChapterQuest** (producto: **LitCircle**), organizadas por dominio.
 
+Especificación funcional del producto: [`docs/ProductSpec.md`](../docs/ProductSpec.md).
+
 ## Estructura por servicio
 
 ```text
 functions/
 ├── common/           # Utilidades compartidas (http, logger, dynamo, models)
-├── auth/             # Health check y futura autenticación
-├── users/            # Perfiles de invitado
-├── books/            # Libros y PDFs
-├── reviews/
-├── comments/
-├── roleplay/
+├── auth/             # Health check
+├── users/            # Perfil invitado opcional (no login; no es Juguemos)
+├── library/          # Catálogo S3 (list + preview URL)
+├── sessions/         # Actividades role play (API /sessions), timer, reviews
+├── ws/               # WebSocket connect / disconnect / message
 └── local/            # Servidor Express para desarrollo local
 ```
 
@@ -71,7 +72,7 @@ Requisitos: Node 24, pnpm, AWS CLI configurado con acceso al entorno `dev`.
 ```bash
 # Desde la raíz del monorepo
 pnpm install
-pnpm dev:api          # Express en http://localhost:3001
+pnpm api              # Express en http://localhost:3001
 curl http://localhost:3001/health
 ```
 
@@ -84,7 +85,7 @@ Variables de entorno útiles:
 | `AWS_REGION` | `us-east-1` | Región AWS |
 | `LOCAL_API_PORT` | `3001` | Puerto del servidor local |
 
-Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de registrar invitados. `/health` no necesita AWS; `/users/guest` escribe en DynamoDB remoto (`dev-chapterquest-users`).
+Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de usar `/users/guest`. Ese endpoint es perfil opcional del sitio, **no** la actividad de role play.
 
 ## Convención de nombres
 
@@ -92,17 +93,33 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de regis
 |---------|--------|---------|
 | Lambda | `{env}-function-{name}` | `dev-function-health` |
 | IAM Role | `{env}-role-function-{name}` | `dev-role-function-health` |
-| DynamoDB | `{env}-chapterquest-{table}` | `dev-chapterquest-users` |
-| S3 | `{env}-chapterquest-{purpose}` | `dev-chapterquest-uploads` |
+| DynamoDB | `{env}-chapterquest-{table}` | `dev-chapterquest-users`, `dev-chapterquest-sessions` |
+| S3 library | `{env}-chapterquest-library` | PDFs curados bajo `library/` |
+| S3 frontend | `{env}-chapterquest-frontend` | Hosting estático |
 
 ## Runtime
 
 - **Local / CI**: Node 24 (`.nvmrc`, `engines` en package.json).
 - **Lambda en AWS**: `nodejs22.x` (runtime más reciente disponible en Lambda; se actualizará cuando AWS publique Node 24).
 
-## Endpoint actual
+## Endpoints
 
-```
-GET /health
-→ { "service": "chapterquest-api", "status": "healthy" }
-```
+### Implementados
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/users/guest` | Perfil invitado opcional (cookie) — no login |
+
+### Planificados (ver ProductSpec)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/library` | Lista PDFs desde S3 + metadata |
+| `GET` | `/library/{key}/url` | Presigned GET para preview |
+| `POST` | `/sessions` | Crear **actividad** role play |
+| `PATCH` | `/sessions/{id}` | Timer, estado, cerrar actividad |
+| `POST` | `/sessions/{id}/reviews/claim` | Participante elige nombre |
+| `POST` | `/sessions/{id}/reviews` | Publicar review |
+| `GET` | `/sessions/{id}/export` | Reporte PDF/imagen |
+| WebSocket | `$connect`, `$default`, `$disconnect` | Sync timer y mural |

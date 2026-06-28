@@ -10,9 +10,9 @@ export default function GuestBanner() {
     <div className="guest-banner" role="status">
       <div className="container guest-banner-inner">
         <p>
-          Navegas como invitado. Tu nombre se guardará en una cookie del
-          navegador para personalizar tu experiencia — sin contraseña ni
-          registro obligatorio.
+          Navegas sin perfil. Puedes elegir un nombre opcional para el sitio
+          (no es login). En el role play de aula, tu identidad es el nombre que
+          ingresa el docente y el rol que asigna la ruleta.
         </p>
         <Link to="/profile" className="btn btn--ghost btn--sm">
           Elegir nombre
