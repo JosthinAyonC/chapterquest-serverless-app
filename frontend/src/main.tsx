@@ -1,16 +1,19 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import App from './App';
-import { GuestUserProvider } from './context/GuestUserContext';
+import { PlaySessionProvider } from './context/PlaySessionContext';
 import './styles/global.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <GuestUserProvider>
-        <App />
-      </GuestUserProvider>
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <PlaySessionProvider>
+          <App />
+        </PlaySessionProvider>
+      </BrowserRouter>
+    </MotionConfig>
   </StrictMode>,
 );
