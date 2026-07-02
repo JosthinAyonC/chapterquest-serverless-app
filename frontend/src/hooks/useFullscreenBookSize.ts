@@ -104,7 +104,9 @@ export function useFullscreenBookSize(enabled: boolean): FullscreenBookSize {
       headerEl && typeof ResizeObserver !== 'undefined'
         ? new ResizeObserver(update)
         : null;
-    headerObserver?.observe(headerEl);
+    if (headerEl && headerObserver) {
+      headerObserver.observe(headerEl);
+    }
 
     window.addEventListener('resize', update);
     window.visualViewport?.addEventListener('resize', update);
