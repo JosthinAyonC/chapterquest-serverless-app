@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wheel } from 'react-custom-roulette';
 import { usePlaySession } from '../context/PlaySessionContext';
 import type { Participant } from '../context/PlaySessionContext';
 import {
   shuffleRoles,
   getRoleById,
+  ROLES,
   type Role,
   type RoleId,
 } from '../mocks/roles';
+import { preloadEmojiWheelImages } from '../utils/emojiWheelImage';
+import RouletteWheel from './RouletteWheel';
 
 interface SpinState {
   slice: Role[];
@@ -17,8 +19,6 @@ interface SpinState {
 }
 
 const REVEAL_MS = 1500;
-/** Library cycle ≈ 11.35s × spinDuration */
-const SPIN_DURATION = 0.26;
 
 function shuffleArray<T>(items: T[]): T[] {
   const copy = [...items];
@@ -48,31 +48,35 @@ export default function Roulette() {
   const { rouletteNames, finishRoulette } = usePlaySession();
   const shuffledRolesRef = useRef<Role[]>([]);
   const assignedRef = useRef<Participant[]>([]);
+  const spinStateRef = useRef<SpinState | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mustSpin, setMustSpin] = useState(false);
   const [assigned, setAssigned] = useState<Participant[]>([]);
   const [revealedRoleId, setRevealedRoleId] = useState<RoleId | null>(null);
   const [spinState, setSpinState] = useState<SpinState | null>(null);
   const [wheelReady, setWheelReady] = useState(false);
+  const stopHandledRef = useRef(false);
+
+  spinStateRef.current = spinState;
 
   const queueSpin = useCallback((index: number, shuffled: Role[]) => {
     const next = buildSpinState(index, shuffled);
     if (!next) return;
+    stopHandledRef.current = false;
     setMustSpin(false);
     setWheelReady(false);
     setSpinState(next);
   }, []);
 
   const assignRole = useCallback(
-    (index: number, shuffled: Role[]) => {
-      const currentRole = shuffled[index];
+    (index: number, role: Role) => {
       const currentName = rouletteNames[index];
-      if (!currentRole || !currentName) return null;
+      if (!currentName) return null;
 
-      setRevealedRoleId(currentRole.id);
+      setRevealedRoleId(role.id);
       const nextAssigned = [
         ...assignedRef.current,
-        { name: currentName, roleId: currentRole.id },
+        { name: currentName, roleId: role.id },
       ];
       assignedRef.current = nextAssigned;
       setAssigned(nextAssigned);
@@ -152,8 +156,53 @@ export default function Roulette() {
   );
 
   useEffect(() => {
+    void preloadEmojiWheelImages(ROLES.map((role) => role.icon));
+  }, []);
+
+  useEffect(() => {
     assignedRef.current = assigned;
   }, [assigned]);
+
+  useEffect(() => {
+    if (!spinState || spinState.slice.length === 0) {
+      setWheelReady(false);
+      setMustSpin(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setWheelReady(false);
+    setMustSpin(false);
+
+    void preloadEmojiWheelImages(spinState.slice.map((role) => role.icon)).then(
+      () => {
+        if (cancelled) return;
+        setWheelReady(true);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [spinState]);
+
+  useEffect(() => {
+    if (!wheelReady || !spinState) return undefined;
+
+    let cancelled = false;
+    let innerFrame = 0;
+    const outerFrame = window.requestAnimationFrame(() => {
+      innerFrame = window.requestAnimationFrame(() => {
+        if (!cancelled) setMustSpin(true);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(outerFrame);
+      window.cancelAnimationFrame(innerFrame);
+    };
+  }, [wheelReady, spinState?.spinKey]);
 
   useEffect(() => {
     if (rouletteNames.length === 0) return;
@@ -161,6 +210,7 @@ export default function Roulette() {
     const shuffled = shuffleRoles();
     shuffledRolesRef.current = shuffled;
     assignedRef.current = [];
+    stopHandledRef.current = false;
     setCurrentIndex(0);
     setAssigned([]);
     setRevealedRoleId(null);
@@ -169,35 +219,21 @@ export default function Roulette() {
     }
   }, [rouletteNames, queueSpin, autoAssignIfSingleRole]);
 
-  useEffect(() => {
-    if (!spinState || spinState.slice.length === 0) return undefined;
-
-    let cancelled = false;
-    let spinTimer: number | undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        if (cancelled) return;
-        setWheelReady(true);
-        spinTimer = window.setTimeout(() => {
-          if (!cancelled) setMustSpin(true);
-        }, 120);
-      });
-    });
-
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(frame);
-      if (spinTimer !== undefined) window.clearTimeout(spinTimer);
-    };
-  }, [spinState]);
-
-  const handleStop = () => {
+  const handleStop = useCallback(() => {
+    if (stopHandledRef.current) return;
+    stopHandledRef.current = true;
     setMustSpin(false);
-    const nextAssigned = assignRole(currentIndex, shuffledRolesRef.current);
+
+    const activeSpin = spinStateRef.current;
+    const winningRole =
+      activeSpin?.slice[activeSpin.prize] ??
+      shuffledRolesRef.current[currentIndex];
+    if (!winningRole) return;
+
+    const nextAssigned = assignRole(currentIndex, winningRole);
     if (!nextAssigned) return;
     advanceAfterAssign(currentIndex, nextAssigned);
-  };
+  }, [assignRole, advanceAfterAssign, currentIndex]);
 
   if (rouletteNames.length === 0) return null;
 
@@ -216,18 +252,7 @@ export default function Roulette() {
 
   const wheelSlice = spinState?.slice ?? [];
   const prizeNumber = spinState?.prize ?? 0;
-
-  const wheelData = wheelSlice.map((role) => ({
-    option: role.icon,
-    style: {
-      backgroundColor: role.color,
-      textColor: '#fff8f0',
-    },
-  }));
-
-  const fontSize =
-    wheelSlice.length <= 2 ? 44 : wheelSlice.length <= 4 ? 38 : 40;
-  const textDistance = 62;
+  const wheelHidden = Boolean(revealedRoleId);
 
   return (
     <div className="roulette-wrap" aria-live="polite">
@@ -254,31 +279,19 @@ export default function Roulette() {
 
       <div className="roulette-stage">
         {showWheel ? (
-          <div className="roulette-wheel-frame">
+          <div
+            className={`roulette-wheel-frame${wheelHidden ? ' roulette-wheel-frame--hidden' : ''}`}
+          >
             <div className="roulette-wheel-pointer" aria-hidden="true" />
             <div className="roulette-wheel-host">
               {wheelReady ? (
-                <Wheel
+                <RouletteWheel
                   key={spinState!.spinKey}
-                  mustStartSpinning={mustSpin}
-                  prizeNumber={prizeNumber}
-                  data={wheelData}
-                  onStopSpinning={handleStop}
-                  backgroundColors={wheelSlice.map((role) => role.color)}
-                  textColors={['#fff8f0']}
-                  outerBorderColor="#B8860B"
-                  outerBorderWidth={6}
-                  innerBorderColor="#E0D6B8"
-                  innerBorderWidth={4}
-                  radiusLineColor="rgba(255, 248, 240, 0.35)"
-                  radiusLineWidth={1}
-                  innerRadius={24}
-                  spinDuration={SPIN_DURATION}
-                  fontSize={fontSize}
-                  fontWeight={700}
-                  perpendicularText={false}
-                  textDistance={textDistance}
-                  disableInitialAnimation
+                  slices={wheelSlice}
+                  prizeIndex={prizeNumber}
+                  spinning={mustSpin}
+                  spinKey={spinState!.spinKey}
+                  onStopped={handleStop}
                 />
               ) : (
                 <p className="roulette-wheel-loading" aria-hidden="true">
@@ -287,7 +300,7 @@ export default function Roulette() {
               )}
             </div>
           </div>
-        ) : (
+        ) : revealedRole ? null : (
           <p className="roulette-auto-assign-note">
             Only one role left — assigned automatically
           </p>

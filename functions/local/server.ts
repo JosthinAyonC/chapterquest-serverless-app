@@ -1,6 +1,4 @@
-import { existsSync } from 'node:fs';
-import { loadEnvFile } from 'node:process';
-import { resolve } from 'node:path';
+import './load-env';
 import express from 'express';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { GetCommand } from '@aws-sdk/lib-dynamodb';
@@ -9,11 +7,6 @@ import { handler as guestHandler } from '../users/handlers/guest';
 import { handler as libraryHandler } from '../library/handlers/list';
 import { handler as sessionHandler } from '../sessions/handlers/session';
 import { docClient, tableName } from '../common/dynamo';
-
-const envFile = resolve(import.meta.dirname, '../.env');
-if (existsSync(envFile)) {
-  loadEnvFile(envFile);
-}
 
 const app = express();
 const PORT = Number(process.env.LOCAL_API_PORT ?? 3001);

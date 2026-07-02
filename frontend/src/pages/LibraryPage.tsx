@@ -4,7 +4,7 @@ import { useBooks } from '../hooks/useBooks';
 import { fadeUp } from '../theme/motion';
 
 export default function LibraryPage() {
-  const { books, loading } = useBooks();
+  const { books, loading, error } = useBooks();
 
   return (
     <section className="page library-page">
@@ -23,6 +23,12 @@ export default function LibraryPage() {
 
       {loading ? (
         <p className="page-subtitle">Loading catalog…</p>
+      ) : error ? (
+        <p className="page-subtitle" role="alert">
+          {error}
+        </p>
+      ) : books.length === 0 ? (
+        <p className="page-subtitle">No books in the catalog yet.</p>
       ) : (
         <div className="library-grid" role="list">
           {books.map((book, index) => (

@@ -52,6 +52,29 @@ aws cloudformation deploy \
   --no-fail-on-empty-changeset \
   --region "${AWS_REGION}"
 
+echo "==> Updating Lambda code from S3 artifacts"
+LAMBDA_FUNCTIONS=(
+  "${Env}-function-health:auth/handlers/health.zip"
+  "${Env}-function-users-guest:users/handlers/guest.zip"
+  "${Env}-function-library-list:library/handlers/list.zip"
+  "${Env}-function-sessions:sessions/handlers/session.zip"
+  "${Env}-function-ws-connect:ws/handlers/connect.zip"
+  "${Env}-function-ws-disconnect:ws/handlers/disconnect.zip"
+  "${Env}-function-ws-message:ws/handlers/message.zip"
+)
+
+for entry in "${LAMBDA_FUNCTIONS[@]}"; do
+  fn_name="${entry%%:*}"
+  s3_key="${entry##*:}"
+  aws lambda update-function-code \
+    --function-name "${fn_name}" \
+    --s3-bucket "${ARTIFACTS_BUCKET}" \
+    --s3-key "${Env}/lambdas/${s3_key}" \
+    --region "${AWS_REGION}" \
+    >/dev/null
+  echo "  updated ${fn_name}"
+done
+
 echo "==> Stack outputs:"
 aws cloudformation describe-stacks \
   --stack-name "${STACK_NAME}" \

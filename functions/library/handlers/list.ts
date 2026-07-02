@@ -3,7 +3,12 @@ import { jsonResponse } from '../../common/http';
 import { logger } from '../../common/logger';
 import { LibraryService } from '../services/library.service';
 
-const libraryService = new LibraryService();
+let libraryService: LibraryService | undefined;
+
+function getLibraryService(): LibraryService {
+  libraryService ??= new LibraryService();
+  return libraryService;
+}
 
 export async function handler(event: APIGatewayProxyEventV2) {
   logger.info('Library handler invoked', {
@@ -13,7 +18,7 @@ export async function handler(event: APIGatewayProxyEventV2) {
 
   try {
     if (event.routeKey === 'GET /library') {
-      const books = await libraryService.listCatalog();
+      const books = await getLibraryService().listCatalog();
       return jsonResponse(200, { books });
     }
 
@@ -26,7 +31,7 @@ export async function handler(event: APIGatewayProxyEventV2) {
         });
       }
 
-      const { url, expiresIn } = await libraryService.getPreviewUrl(key);
+      const { url, expiresIn } = await getLibraryService().getPreviewUrl(key);
       return jsonResponse(200, { url, expiresIn });
     }
 

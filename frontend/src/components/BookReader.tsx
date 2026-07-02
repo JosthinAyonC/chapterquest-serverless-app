@@ -3,16 +3,20 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import * as pdfjs from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { useFullscreenBookSize } from '../hooks/useFullscreenBookSize';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface BookReaderProps {
   previewUrl: string | null;
+  layout?: 'inline' | 'fullscreen';
 }
 
 interface ReaderPageProps {
@@ -29,7 +33,10 @@ const ReaderPage = forwardRef<HTMLDivElement, ReaderPageProps>(
 );
 ReaderPage.displayName = 'ReaderPage';
 
-export default function BookReader({ previewUrl }: BookReaderProps) {
+export default function BookReader({
+  previewUrl,
+  layout = 'inline',
+}: BookReaderProps) {
   const [pages, setPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +46,10 @@ export default function BookReader({ previewUrl }: BookReaderProps) {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     [],
   );
+  const isFullscreen = layout === 'fullscreen';
+  const isMobile = useIsMobile();
+  const bookSize = useFullscreenBookSize(isFullscreen);
+  const pdfScale = isFullscreen && isMobile ? 2 : 1.35;
 
   useEffect(() => {
     if (!previewUrl) {
@@ -58,7 +69,7 @@ export default function BookReader({ previewUrl }: BookReaderProps) {
 
         for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber += 1) {
           const page = await doc.getPage(pageNumber);
-          const viewport = page.getViewport({ scale: 1.35 });
+          const viewport = page.getViewport({ scale: pdfScale });
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           if (!context) continue;
@@ -84,7 +95,7 @@ export default function BookReader({ previewUrl }: BookReaderProps) {
     return () => {
       cancelled = true;
     };
-  }, [previewUrl]);
+  }, [previewUrl, pdfScale]);
 
   if (!previewUrl) return null;
 
@@ -97,27 +108,38 @@ export default function BookReader({ previewUrl }: BookReaderProps) {
     );
   } else if (pages.length === 0) {
     content = <p className="book-reader-status">No pages found in this PDF.</p>;
-  } else if (reducedMotion) {
+  } else if (reducedMotion || (isFullscreen && isMobile)) {
     content = (
-      <div className="book-reader-scroll">
+      <div
+        className={`book-reader-scroll${
+          isFullscreen && isMobile ? ' book-reader-scroll--mobile-fullscreen' : ''
+        }`}
+      >
         {pages.map((src, index) => (
-          <img key={src} src={src} alt={`Page ${index + 1}`} />
+          <img key={src} src={src} alt={`Page ${index + 1}`} draggable={false} />
         ))}
       </div>
     );
+  } else if (isFullscreen && !bookSize.ready) {
+    content = <p className="book-reader-status">Preparing reader…</p>;
   } else {
     content = (
       <HTMLFlipBook
+        key={
+          isFullscreen
+            ? `book-${bookSize.width}x${bookSize.height}`
+            : 'book-inline'
+        }
         className="book-flipbook"
-        width={320}
-        height={450}
-        size="stretch"
-        minWidth={260}
-        maxWidth={520}
-        minHeight={360}
-        maxHeight={620}
+        width={isFullscreen ? bookSize.width : 320}
+        height={isFullscreen ? bookSize.height : 450}
+        size={isFullscreen ? 'fixed' : 'stretch'}
+        minWidth={isFullscreen ? bookSize.width : 260}
+        maxWidth={isFullscreen ? bookSize.width : 520}
+        minHeight={isFullscreen ? bookSize.height : 360}
+        maxHeight={isFullscreen ? bookSize.height : 620}
         showCover
-        mobileScrollSupport
+        mobileScrollSupport={!isFullscreen}
         drawShadow
         usePortrait
       >
@@ -129,7 +151,18 @@ export default function BookReader({ previewUrl }: BookReaderProps) {
   }
 
   return (
-    <section className="book-reader" aria-label="Book reader">
+    <section
+      className={`book-reader${layout === 'fullscreen' ? ' book-reader--fullscreen' : ''}`}
+      style={
+        isFullscreen
+          ? ({
+              '--book-width': `${bookSize.width}px`,
+              '--book-height': `${bookSize.height}px`,
+            } as CSSProperties)
+          : undefined
+      }
+      aria-label="Book reader"
+    >
       {content}
     </section>
   );

@@ -4,13 +4,15 @@ import { motion } from 'framer-motion';
 import { getBookPreviewUrl } from '../lib/api';
 import { usePlaySession } from '../context/PlaySessionContext';
 import { useBooks } from '../hooks/useBooks';
+import { useIsMobile } from '../hooks/useIsMobile';
 import Roulette from '../components/Roulette';
 import RouletteModal from '../components/RouletteModal';
 import RosterPanel from '../components/RosterPanel';
 import CircularTimer from '../components/CircularTimer';
+import DraggableReadingTimer from '../components/DraggableReadingTimer';
 import TimeUpModal from '../components/TimeUpModal';
 import ConfirmFinishModal from '../components/ConfirmFinishModal';
-import BookReader from '../components/BookReader';
+import BookReaderModal from '../components/BookReaderModal';
 
 function playOptionalSound() {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -33,7 +35,8 @@ function playOptionalSound() {
 
 export default function PlayPage() {
   const navigate = useNavigate();
-  const { books, source } = useBooks();
+  const { books } = useBooks();
+  const isMobile = useIsMobile();
   const {
     phase,
     names,
@@ -59,6 +62,7 @@ export default function PlayPage() {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [modalDismissed, setModalDismissed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [readerMinimized, setReaderMinimized] = useState(false);
 
   const totalSeconds = durationMinutes * 60;
 
@@ -88,6 +92,12 @@ export default function PlayPage() {
     if (!selectedBook) return;
     startTimer();
   };
+
+  useEffect(() => {
+    if (timerRunning) {
+      setReaderMinimized(false);
+    }
+  }, [timerRunning]);
 
   useEffect(() => {
     if (!timerRunning) return undefined;
@@ -289,44 +299,46 @@ export default function PlayPage() {
               )}
 
               {(timerRunning || phase === 'finished') && (
-                <div className="reading-session">
-                  <div className="timer-section">
-                    <CircularTimer
-                      remainingSeconds={remainingSeconds}
-                      totalSeconds={totalSeconds}
-                      running={timerRunning}
-                    />
-                    {selectedBook && (
-                      <p className="page-subtitle" style={{ textAlign: 'center' }}>
-                        Reading: <strong>{selectedBook.title}</strong>
-                      </p>
-                    )}
-                    {timerRunning && (
-                      <div className="play-actions" style={{ justifyContent: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn--ghost"
-                          onClick={() => setShowFinishModal(true)}
-                        >
-                          Finish early
-                        </button>
-                      </div>
-                    )}
-                    {phase === 'finished' && (
-                      <div className="play-actions" style={{ justifyContent: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn--primary"
-                          onClick={handleGoToReview}
-                        >
-                          Let&apos;s review
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {(timerRunning || phase === 'finished') && selectedBook?.key && (
-                    <BookReader previewUrl={previewUrl} />
+                <div
+                  className={`reading-session reading-session--active${readerMinimized && isMobile ? ' reading-session--minimized-mobile' : ''}`}
+                >
+                  {(timerRunning && readerMinimized) || phase === 'finished' ? (
+                    <div className="reading-session-inline-timer">
+                      <CircularTimer
+                        remainingSeconds={remainingSeconds}
+                        totalSeconds={totalSeconds}
+                        running={timerRunning}
+                        compact={isMobile && readerMinimized}
+                        mini={isMobile && readerMinimized}
+                      />
+                    </div>
+                  ) : null}
+                  {selectedBook && (
+                    <p className="reading-session-book-line page-subtitle">
+                      Reading: <strong>{selectedBook.title}</strong>
+                    </p>
+                  )}
+                  {timerRunning && (
+                    <div className="play-actions">
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={() => setShowFinishModal(true)}
+                      >
+                        Finish early
+                      </button>
+                    </div>
+                  )}
+                  {phase === 'finished' && (
+                    <div className="play-actions">
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={handleGoToReview}
+                      >
+                        Let&apos;s review
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -336,13 +348,6 @@ export default function PlayPage() {
 
         <RosterPanel participants={participants} />
       </div>
-
-      {source === 'mock' && (
-        <p className="page-subtitle" style={{ marginTop: '1rem', fontSize: '0.9rem' }}>
-          Using demo books — upload a PDF with <code>scripts/upload_book.sh</code> and
-          ensure the API can reach S3.
-        </p>
-      )}
 
       <RouletteModal open={phase === 'roulette'}>
         <Roulette />
@@ -363,6 +368,34 @@ export default function PlayPage() {
           setModalDismissed(true);
         }}
       />
+
+      {timerRunning && !readerMinimized && !isMobile && (
+        <DraggableReadingTimer
+          remainingSeconds={remainingSeconds}
+          totalSeconds={totalSeconds}
+          running={timerRunning}
+        />
+      )}
+
+      {timerRunning && selectedBook?.key && (
+        <BookReaderModal
+          open={timerRunning}
+          previewUrl={previewUrl}
+          bookTitle={selectedBook.title}
+          headerTimer={
+            isMobile && !readerMinimized ? (
+              <CircularTimer
+                remainingSeconds={remainingSeconds}
+                totalSeconds={totalSeconds}
+                running={timerRunning}
+                compact
+                mini
+              />
+            ) : undefined
+          }
+          onMinimizedChange={setReaderMinimized}
+        />
+      )}
     </section>
   );
 }

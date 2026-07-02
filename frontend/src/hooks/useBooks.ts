@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { getLibrary } from '../lib/api';
+import { ApiError, getLibrary } from '../lib/api';
 import { mapApiBook } from '../lib/books';
-import { MOCK_BOOKS, type Book } from '../mocks/books';
+import type { Book } from '../mocks/books';
 
 export function useBooks() {
-  const [books, setBooks] = useState<Book[]>(MOCK_BOOKS);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<'api' | 'mock'>('mock');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -14,18 +14,16 @@ export function useBooks() {
     getLibrary()
       .then((apiBooks) => {
         if (cancelled) return;
-        if (apiBooks.length > 0) {
-          setBooks(apiBooks.map((book, index) => mapApiBook(book, index)));
-          setSource('api');
-        } else {
-          setBooks(MOCK_BOOKS);
-          setSource('mock');
-        }
+        setBooks(apiBooks.map((book, index) => mapApiBook(book, index)));
+        setError(null);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setBooks(MOCK_BOOKS);
-          setSource('mock');
+      .catch((err) => {
+        if (cancelled) return;
+        setBooks([]);
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError('Could not load the library catalog.');
         }
       })
       .finally(() => {
@@ -37,5 +35,5 @@ export function useBooks() {
     };
   }, []);
 
-  return { books, loading, source };
+  return { books, loading, error };
 }
