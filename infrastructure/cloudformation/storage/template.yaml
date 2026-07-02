@@ -7,11 +7,18 @@ Parameters:
     AllowedValues: [dev, prod]
   FrontendOrigin:
     Type: String
-    Description: Allowed CORS origin for library bucket (CloudFront URL or custom domain)
+    Description: Allowed CORS origin for library CDN (CloudFront URL or custom domain)
+  LocalDevOrigin:
+    Type: String
+    Default: ''
+    Description: Optional local dev origin (e.g. http://localhost:5173) for library CDN CORS
   LibraryPrefix:
     Type: String
     Default: library/
     Description: S3 prefix for curated PDF catalog (admin uploads only)
+
+Conditions:
+  HasLocalDevOrigin: !Not [!Equals [!Ref LocalDevOrigin, '']]
 
 Resources:
   FrontendBucket:
@@ -45,13 +52,78 @@ Resources:
         RestrictPublicBuckets: true
       VersioningConfiguration:
         Status: Enabled
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders: ['*']
-            AllowedMethods: [GET, HEAD]
-            AllowedOrigins:
-              - !Ref FrontendOrigin
-            MaxAge: 3600
+
+  LibraryCloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub ${Env}-chapterquest-library-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  LibraryCorsResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub ${Env}-chapterquest-library-cors
+        CorsConfig:
+          AccessControlAllowCredentials: false
+          AccessControlAllowHeaders:
+            Items: ['*']
+          AccessControlAllowMethods:
+            Items: [GET, HEAD, OPTIONS]
+          AccessControlAllowOrigins:
+            Items: !If
+              - HasLocalDevOrigin
+              - [!Ref FrontendOrigin, !Ref LocalDevOrigin]
+              - [!Ref FrontendOrigin]
+          AccessControlExposeHeaders:
+            Items: ['*']
+          AccessControlMaxAgeSec: 3600
+          OriginOverride: true
+
+  LibraryCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub ${Env} ChapterQuest library PDF CDN
+        HttpVersion: http2and3
+        Origins:
+          - Id: LibraryS3Origin
+            DomainName: !GetAtt LibraryBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt LibraryCloudFrontOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: LibraryS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+          ResponseHeadersPolicyId: !Ref LibraryCorsResponseHeadersPolicy
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  LibraryBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LibraryBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowLibraryCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub arn:aws:s3:::${LibraryBucket}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${LibraryCloudFrontDistribution}
 
 Outputs:
   FrontendBucketName:
@@ -74,3 +146,11 @@ Outputs:
     Value: !Ref LibraryPrefix
     Export:
       Name: !Sub ${Env}-chapterquest-library-prefix
+  LibraryCdnDomainName:
+    Value: !GetAtt LibraryCloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub ${Env}-chapterquest-library-cdn-domain
+  LibraryCdnUrl:
+    Value: !Sub https://${LibraryCloudFrontDistribution.DomainName}
+    Export:
+      Name: !Sub ${Env}-chapterquest-library-cdn-url

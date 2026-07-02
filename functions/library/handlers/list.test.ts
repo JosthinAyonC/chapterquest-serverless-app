@@ -83,7 +83,10 @@ describe('library handler', () => {
   });
 
   it('returns preview url on GET /library/{key}/preview-url', async () => {
-    getPreviewUrlMock.mockResolvedValue('https://signed.example/book.pdf');
+    getPreviewUrlMock.mockResolvedValue({
+      url: 'https://signed.example/book.pdf',
+      expiresIn: 300,
+    });
 
     const result = await handler(
       buildEvent('GET /library/{key}/preview-url', { key: 'el-pepe.pdf' }),

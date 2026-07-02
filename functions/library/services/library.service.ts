@@ -16,20 +16,28 @@ export interface LibraryBook {
   coverUrl: string | null;
 }
 
+export interface PreviewUrlResult {
+  url: string;
+  expiresIn: number | null;
+}
+
 export class LibraryService {
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly prefix: string;
+  private readonly cdnDomain: string | undefined;
 
   constructor(
     client = new S3Client({ region: process.env.AWS_REGION ?? 'us-east-1' }),
     bucket = process.env.LIBRARY_BUCKET ??
       `${process.env.ENV ?? 'dev'}-chapterquest-library`,
     prefix = process.env.LIBRARY_PREFIX ?? 'library/',
+    cdnDomain = process.env.LIBRARY_CDN_DOMAIN,
   ) {
     this.client = client;
     this.bucket = bucket;
     this.prefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
+    this.cdnDomain = normalizeCdnDomain(cdnDomain);
   }
 
   async listCatalog(): Promise<LibraryBook[]> {
@@ -50,17 +58,27 @@ export class LibraryService {
     return books.sort((a, b) => a.title.localeCompare(b.title));
   }
 
-  async getPreviewUrl(key: string): Promise<string> {
+  async getPreviewUrl(key: string): Promise<PreviewUrlResult> {
     const objectKey = this.resolveObjectKey(key);
     await this.client.send(
       new HeadObjectCommand({ Bucket: this.bucket, Key: objectKey }),
     );
 
-    return getSignedUrl(
-      this.client,
-      new GetObjectCommand({ Bucket: this.bucket, Key: objectKey }),
-      { expiresIn: 300 },
-    );
+    if (this.cdnDomain) {
+      return {
+        url: this.buildCdnUrl(objectKey),
+        expiresIn: null,
+      };
+    }
+
+    return {
+      url: await getSignedUrl(
+        this.client,
+        new GetObjectCommand({ Bucket: this.bucket, Key: objectKey }),
+        { expiresIn: 300 },
+      ),
+      expiresIn: 300,
+    };
   }
 
   private resolveObjectKey(key: string): string {
@@ -69,6 +87,14 @@ export class LibraryService {
       return normalized;
     }
     return `${this.prefix}${normalized}`;
+  }
+
+  private buildCdnUrl(objectKey: string): string {
+    const encodedKey = objectKey
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
+    return `https://${this.cdnDomain}/${encodedKey}`;
   }
 
   private async describeBook(objectKey: string): Promise<LibraryBook> {
@@ -83,13 +109,7 @@ export class LibraryService {
       : objectKey;
 
     const coverKey = metadata.cover ?? metadata['cover-key'];
-    const coverUrl = coverKey
-      ? await getSignedUrl(
-          this.client,
-          new GetObjectCommand({ Bucket: this.bucket, Key: coverKey }),
-          { expiresIn: 3600 },
-        )
-      : null;
+    const coverUrl = coverKey ? await this.resolveObjectUrl(coverKey) : null;
 
     return {
       key: relativeKey,
@@ -101,6 +121,27 @@ export class LibraryService {
       coverUrl,
     };
   }
+
+  private async resolveObjectUrl(objectKey: string): Promise<string> {
+    if (this.cdnDomain) {
+      return this.buildCdnUrl(objectKey);
+    }
+
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({ Bucket: this.bucket, Key: objectKey }),
+      { expiresIn: 3600 },
+    );
+  }
+}
+
+function normalizeCdnDomain(domain: string | undefined): string | undefined {
+  if (!domain) {
+    return undefined;
+  }
+
+  const trimmed = domain.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  return trimmed || undefined;
 }
 
 function humanizeSlug(slug: string): string {

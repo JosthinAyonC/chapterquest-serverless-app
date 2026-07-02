@@ -23,7 +23,11 @@ Parameters:
   FrontendOrigin:
     Type: String
     Default: https://placeholder.cloudfront.net
-    Description: CORS origin for library bucket; update after first deploy
+    Description: CORS origin for library CDN; update after first deploy
+  LocalDevOrigin:
+    Type: String
+    Default: ''
+    Description: Optional local dev origin for library CDN CORS (dev only)
   LibraryPrefix:
     Type: String
     Default: library/
@@ -47,6 +51,7 @@ Resources:
       Parameters:
         Env: !Ref Env
         FrontendOrigin: !Ref FrontendOrigin
+        LocalDevOrigin: !Ref LocalDevOrigin
         LibraryPrefix: !Ref LibraryPrefix
 
   DatabaseStack:
@@ -74,6 +79,7 @@ Resources:
         SessionsTableName: !GetAtt DatabaseStack.Outputs.SessionsTableName
         LibraryBucketName: !GetAtt StorageStack.Outputs.LibraryBucketName
         LibraryPrefix: !GetAtt StorageStack.Outputs.LibraryPrefix
+        LibraryCdnDomain: !GetAtt StorageStack.Outputs.LibraryCdnDomainName
 
   FrontendStack:
     Type: AWS::CloudFormation::Stack
@@ -103,6 +109,10 @@ Outputs:
     Value: !GetAtt StorageStack.Outputs.LibraryBucketName
   LibraryPrefix:
     Value: !GetAtt StorageStack.Outputs.LibraryPrefix
+  LibraryCdnUrl:
+    Value: !GetAtt StorageStack.Outputs.LibraryCdnUrl
+  LibraryCdnDomainName:
+    Value: !GetAtt StorageStack.Outputs.LibraryCdnDomainName
   CloudFrontDistributionId:
     Value: !GetAtt FrontendStack.Outputs.CloudFrontDistributionId
   CloudFrontDomainName:

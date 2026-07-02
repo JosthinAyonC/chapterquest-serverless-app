@@ -46,6 +46,7 @@ aws cloudformation deploy \
     "DomainName=${DomainName}" \
     "HostedZoneId=${HostedZoneId}" \
     "FrontendOrigin=${FrontendOrigin}" \
+    "LocalDevOrigin=${LocalDevOrigin:-}" \
     "LibraryPrefix=${LibraryPrefix:-library/}" \
   --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
   --no-fail-on-empty-changeset \

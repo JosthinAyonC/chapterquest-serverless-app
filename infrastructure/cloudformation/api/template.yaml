@@ -47,6 +47,10 @@ Parameters:
   LibraryPrefix:
     Type: String
     Default: library/
+  LibraryCdnDomain:
+    Type: String
+    Default: ''
+    Description: CloudFront domain for library PDFs and covers (no protocol)
 
 Conditions:
   UseCustomDomain: !Equals [!Ref EnableCustomDomain, 'true']
@@ -172,6 +176,7 @@ Resources:
           ENV: !Ref Env
           LIBRARY_BUCKET: !Ref LibraryBucketName
           LIBRARY_PREFIX: !Ref LibraryPrefix
+          LIBRARY_CDN_DOMAIN: !Ref LibraryCdnDomain
       Code:
         S3Bucket: !Ref LambdaArtifactsBucket
         S3Key: !Sub ${Env}/lambdas/${LibraryListLambdaS3Key}

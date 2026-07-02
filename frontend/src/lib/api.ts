@@ -38,7 +38,7 @@ export interface LibraryCatalogResponse {
 
 export interface BookPreviewResponse {
   url: string;
-  expiresIn: number;
+  expiresIn: number | null;
 }
 
 export class ApiError extends Error {

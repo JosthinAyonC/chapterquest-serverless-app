@@ -26,8 +26,8 @@ export async function handler(event: APIGatewayProxyEventV2) {
         });
       }
 
-      const url = await libraryService.getPreviewUrl(key);
-      return jsonResponse(200, { url, expiresIn: 300 });
+      const { url, expiresIn } = await libraryService.getPreviewUrl(key);
+      return jsonResponse(200, { url, expiresIn });
     }
 
     return jsonResponse(404, {
