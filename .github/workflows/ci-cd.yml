@@ -70,6 +70,7 @@ jobs:
           fetch-depth: 0
 
       - name: Detect changed paths
+        # Shared paths (package.json, ci-cd.yml, …) trigger both stack and frontend deploy.
         id: changes
         run: |
           set -euo pipefail
