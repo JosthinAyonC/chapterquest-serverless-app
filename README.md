@@ -1,4 +1,4 @@
-# LitCircle (ChapterQuest)
+# LitCircle
 
 > **LitCircle** es el producto. **ChapterQuest** es el nombre técnico del repositorio y la plataforma serverless que lo impulsa.
 
