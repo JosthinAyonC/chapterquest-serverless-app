@@ -12,19 +12,38 @@ export default function BookCard({ book }: BookCardProps) {
         <div className="book-card-face book-card-front">
           <div
             className="book-cover"
-            style={{ background: `linear-gradient(160deg, ${book.coverColor}, ${book.coverColor}cc)` }}
+            style={
+              book.coverUrl
+                ? undefined
+                : {
+                    background: `linear-gradient(160deg, ${book.coverColor}, ${book.coverColor}cc)`,
+                  }
+            }
           >
-            <h3>{book.title}</h3>
-            <p>{book.author}</p>
+            {book.coverUrl ? (
+              <img src={book.coverUrl} alt="" className="book-cover-image" />
+            ) : (
+              <div className="book-cover-text">
+                <h3>{book.title}</h3>
+                <p>{book.author}</p>
+              </div>
+            )}
           </div>
           <div className="book-meta">
             <div className="book-tags">
               <span className="tag">{book.language}</span>
-              <span className="tag">Grade {book.level}</span>
+              {book.audience ? (
+                <span className="tag tag--audience">{book.audience}</span>
+              ) : null}
+              {book.level !== '—' ? (
+                <span className="tag">Grade {book.level}</span>
+              ) : null}
             </div>
           </div>
         </div>
         <div className="book-card-face book-card-back">
+          <h3>{book.title}</h3>
+          <p className="book-card-author">{book.author}</p>
           <p>{book.summary}</p>
         </div>
       </div>

@@ -48,12 +48,12 @@ Checklist de funcionalidades ordenadas por área de producto. Cada ítem enlaza 
 
 | ID | Feature | Descripción breve | SDD | Listo |
 |----|---------|-------------------|-----|-------|
-| F-30 | Convención S3 curador | PDFs en `{env}-chapterquest-library/library/` con metadata | [§4.2](./ProductSpec.md#42-biblioteca) · [§9.2](./ProductSpec.md#92-planificado--persiste-la-actividad-no-el-usuario) | [ ] |
-| F-31 | API listado biblioteca | `GET /library` — ListObjects + HeadObject → JSON catálogo | [§4.2](./ProductSpec.md#42-biblioteca) | [ ] |
-| F-32 | API preview PDF | `GET /library/{key}/preview-url` — presigned GET | [§4.2](./ProductSpec.md#42-biblioteca) · D1 | [ ] |
+| F-30 | Convención S3 curador | PDFs en `{env}-chapterquest-library/library/` con metadata | [§4.2](./ProductSpec.md#42-biblioteca) · [§9.2](./ProductSpec.md#92-planificado--persiste-la-actividad-no-el-usuario) | [x] |
+| F-31 | API listado biblioteca | `GET /library` — ListObjects + HeadObject → JSON catálogo | [§4.2](./ProductSpec.md#42-biblioteca) | [x] |
+| F-32 | API preview PDF | `GET /library/{key}/preview-url` — presigned GET | [§4.2](./ProductSpec.md#42-biblioteca) · D1 | [x] |
 | F-33 | UI catálogo | Grid/lista: título, autor, idioma, nivel | [§4.2](./ProductSpec.md#42-biblioteca) | [x] |
-| F-34 | Visor PDF en frontend | Preview integrado (PDF.js o similar) | [§4.2](./ProductSpec.md#42-biblioteca) · D1 | [ ] |
-| F-35 | Script / doc subida curador | Guía CLI para admin (aws s3 cp + metadata) | [§3 Curador](./ProductSpec.md#3-personas) · [§4.2](./ProductSpec.md#42-biblioteca) | [ ] |
+| F-34 | Visor PDF en frontend | Flipbook integrado (pdfjs-dist + react-pageflip) | [§4.2](./ProductSpec.md#42-biblioteca) · D1 | [x] |
+| F-35 | Script / doc subida curador | `scripts/upload_book.sh` — PDF + portada + metadata | [§3 Curador](./ProductSpec.md#3-personas) · [§4.2](./ProductSpec.md#42-biblioteca) | [x] |
 
 ---
 
@@ -74,7 +74,7 @@ Checklist de funcionalidades ordenadas por área de producto. Cada ítem enlaza 
 |----|---------|-------------------|-----|-------|
 | F-50 | Ruta Juguemos | Shell `/play` para flujo del host | [§4.4](./ProductSpec.md#44-juguemos) | [x] |
 | F-51 | Ingreso 6 nombres | 6 campos de texto; validación básica | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R1 | [x] |
-| F-52 | Ruleta de roles | Asignación aleatoria 1 rol por nombre | [§5](./ProductSpec.md#5-los-seis-roles) · R2 | [x] |
+| F-52 | Ruleta de roles | Asignación aleatoria secuencial (1 rol por nombre, animada) | [§5](./ProductSpec.md#5-los-seis-roles) · R2 | [x] |
 | F-53 | Roster confirmación | Pantalla 6× **Nombre · Rol** antes de continuar | [§2.2](./ProductSpec.md#22-visibilidad-nombre--rol-requisito-ux) · R2 · NFR-7 | [x] |
 | F-54 | Selección de libro | Elegir PDF desde biblioteca curada | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R3 | [x] |
 | F-55 | API crear actividad | `POST /sessions` — persiste metadata + 6 participantes + roles | [§9.2](./ProductSpec.md#92-planificado--persiste-la-actividad-no-el-usuario) · R1–R3 | [ ] |
@@ -92,6 +92,7 @@ Checklist de funcionalidades ordenadas por área de producto. Cada ítem enlaza 
 | F-63 | Alerta fin de tiempo | Modal suave + sonido opcional al llegar a 0 | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R5 · NFR-3 · D6 | [x] |
 | F-64 | Transición a review | Botón manual «Pasemos a las reviews» | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R6 | [x] |
 | F-65 | Panel roster persistente | Componente reutilizable nombre + rol durante toda la actividad | [§2.2](./ProductSpec.md#22-visibilidad-nombre--rol-requisito-ux) · NFR-7 | [x] |
+| F-68 | Terminar antes | Botón host + modal confirmación para finalizar reading time anticipadamente | [§6.1 R5b](./ProductSpec.md#61-reglas-de-negocio) | [x] |
 | F-66 | API timer / estado | `PATCH /sessions/{id}` — running, timerEndsAt, status | [§9.2](./ProductSpec.md#92-planificado--persiste-la-actividad-no-el-usuario) | [ ] |
 | F-67 | Nav «Actividad en curso» | Entrada condicional si hay actividad abierta (`activityId`) | [§4.5](./ProductSpec.md#45-actividad-en-curso-opcional-condicional) · NFR-2 · D4 | [ ] |
 
@@ -133,13 +134,13 @@ Checklist de funcionalidades ordenadas por área de producto. Cada ítem enlaza 
 | 0. Fundación | 6 | 6 |
 | 1. Shell UI | 5 | 4 |
 | 2. Landing | 4 | 3 |
-| 3. Biblioteca | 6 | 1 |
+| 3. Biblioteca | 6 | 6 |
 | 4. Guía | 4 | 4 |
 | 5. Juguemos — crear | 7 | 5 |
-| 6. Juguemos — timer | 8 | 6 |
+| 6. Juguemos — timer | 9 | 7 |
 | 7. Review | 10 | 4 |
 | 8. WebSocket | 5 | 1 |
-| **Total** | **55** | **34** |
+| **Total** | **56** | **41** |
 
 ---
 

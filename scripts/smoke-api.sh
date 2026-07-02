@@ -29,8 +29,9 @@ STATUS=$(curl -s -o /tmp/guest-invalid.json -w "%{http_code}" \
   -d '{"username":"a"}')
 test "${STATUS}" = "400"
 
-echo "==> Smoke: GET /library (stub)"
+echo "==> Smoke: GET /library"
 STATUS=$(curl -s -o /tmp/library.json -w "%{http_code}" "${BASE_URL}/library")
-test "${STATUS}" = "501"
+test "${STATUS}" = "200"
+grep -q '"books"' /tmp/library.json
 
 echo "==> API smoke tests passed"

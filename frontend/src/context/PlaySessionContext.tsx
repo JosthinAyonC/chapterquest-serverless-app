@@ -8,7 +8,6 @@ import {
 } from 'react';
 import type { Book } from '../mocks/books';
 import type { RoleId } from '../mocks/roles';
-import { shuffleRoles } from '../mocks/roles';
 import type { MockReview } from '../mocks/reviews';
 import { INITIAL_MOCK_REVIEWS } from '../mocks/reviews';
 
@@ -28,18 +27,20 @@ export interface Participant {
 export interface PlaySessionState {
   phase: PlayPhase;
   names: string[];
+  rouletteNames: string[];
   participants: Participant[];
   selectedBook: Book | null;
   durationMinutes: number;
   remainingSeconds: number;
   timerRunning: boolean;
+  endedEarly: boolean;
   reviews: MockReview[];
   rouletteSpinning: boolean;
 }
 
 type Action =
   | { type: 'SET_NAMES'; names: string[] }
-  | { type: 'START_ROULETTE' }
+  | { type: 'START_ROULETTE'; names: string[] }
   | { type: 'FINISH_ROULETTE'; participants: Participant[] }
   | { type: 'CONFIRM_ROSTER' }
   | { type: 'SELECT_BOOK'; book: Book }
@@ -47,6 +48,7 @@ type Action =
   | { type: 'START_TIMER' }
   | { type: 'TICK' }
   | { type: 'STOP_TIMER' }
+  | { type: 'FINISH_EARLY' }
   | { type: 'GO_TO_REVIEW' }
   | { type: 'ADD_REVIEW'; review: MockReview }
   | { type: 'RESET' };
@@ -56,11 +58,13 @@ const DEFAULT_DURATION = 40;
 const initialState: PlaySessionState = {
   phase: 'setup',
   names: Array(6).fill(''),
+  rouletteNames: [],
   participants: [],
   selectedBook: null,
   durationMinutes: DEFAULT_DURATION,
   remainingSeconds: DEFAULT_DURATION * 60,
   timerRunning: false,
+  endedEarly: false,
   reviews: [...INITIAL_MOCK_REVIEWS],
   rouletteSpinning: false,
 };
@@ -70,12 +74,19 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
     case 'SET_NAMES':
       return { ...state, names: action.names };
     case 'START_ROULETTE':
-      return { ...state, phase: 'roulette', rouletteSpinning: true };
+      return {
+        ...state,
+        phase: 'roulette',
+        rouletteSpinning: true,
+        rouletteNames: action.names,
+        participants: [],
+      };
     case 'FINISH_ROULETTE':
       return {
         ...state,
         participants: action.participants,
         rouletteSpinning: false,
+        rouletteNames: [],
         phase: 'confirmed',
       };
     case 'CONFIRM_ROSTER':
@@ -95,6 +106,7 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
         ...state,
         phase: 'timer',
         timerRunning: true,
+        endedEarly: false,
         remainingSeconds: state.durationMinutes * 60,
       };
     case 'TICK':
@@ -104,11 +116,20 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
           remainingSeconds: 0,
           timerRunning: false,
           phase: 'finished',
+          endedEarly: false,
         };
       }
       return { ...state, remainingSeconds: state.remainingSeconds - 1 };
     case 'STOP_TIMER':
       return { ...state, timerRunning: false, phase: 'finished' };
+    case 'FINISH_EARLY':
+      return {
+        ...state,
+        timerRunning: false,
+        remainingSeconds: 0,
+        phase: 'finished',
+        endedEarly: true,
+      };
     case 'GO_TO_REVIEW':
       return { ...state, phase: 'review', timerRunning: false };
     case 'ADD_REVIEW':
@@ -127,26 +148,20 @@ interface PlaySessionContextValue extends PlaySessionState {
   hasActiveSession: boolean;
   setNames: (names: string[]) => void;
   spinRoulette: (names: string[]) => void;
+  finishRoulette: (participants: Participant[]) => void;
   confirmRoster: () => void;
   selectBook: (book: Book) => void;
   setDuration: (minutes: number) => void;
   startTimer: () => void;
   tick: () => void;
   stopTimer: () => void;
+  finishEarly: () => void;
   goToReview: () => void;
   addReview: (name: string, message: string) => void;
   resetSession: () => void;
 }
 
 const PlaySessionContext = createContext<PlaySessionContextValue | null>(null);
-
-function assignParticipants(names: string[]): Participant[] {
-  const roles = shuffleRoles();
-  return names.map((name, i) => ({
-    name,
-    roleId: roles[i].id,
-  }));
-}
 
 export function PlaySessionProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -156,14 +171,11 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const spinRoulette = useCallback((names: string[]) => {
-    dispatch({ type: 'START_ROULETTE' });
-    const trimmed = names.map((n) => n.trim()).filter(Boolean);
-    window.setTimeout(() => {
-      dispatch({
-        type: 'FINISH_ROULETTE',
-        participants: assignParticipants(trimmed),
-      });
-    }, 2200);
+    dispatch({ type: 'START_ROULETTE', names });
+  }, []);
+
+  const finishRoulette = useCallback((participants: Participant[]) => {
+    dispatch({ type: 'FINISH_ROULETTE', participants });
   }, []);
 
   const confirmRoster = useCallback(() => {
@@ -188,6 +200,10 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
 
   const stopTimer = useCallback(() => {
     dispatch({ type: 'STOP_TIMER' });
+  }, []);
+
+  const finishEarly = useCallback(() => {
+    dispatch({ type: 'FINISH_EARLY' });
   }, []);
 
   const goToReview = useCallback(() => {
@@ -225,12 +241,14 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       hasActiveSession,
       setNames,
       spinRoulette,
+      finishRoulette,
       confirmRoster,
       selectBook,
       setDuration,
       startTimer,
       tick,
       stopTimer,
+      finishEarly,
       goToReview,
       addReview,
       resetSession,
@@ -240,12 +258,14 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       hasActiveSession,
       setNames,
       spinRoulette,
+      finishRoulette,
       confirmRoster,
       selectBook,
       setDuration,
       startTimer,
       tick,
       stopTimer,
+      finishEarly,
       goToReview,
       addReview,
       resetSession,

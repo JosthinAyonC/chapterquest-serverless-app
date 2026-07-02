@@ -1,11 +1,15 @@
 export interface Book {
   id: string;
+  key?: string;
   title: string;
   author: string;
   language: string;
   level: string;
+  audience?: string;
   summary: string;
+  description?: string;
   coverColor: string;
+  coverUrl?: string;
 }
 
 export const MOCK_BOOKS: Book[] = [

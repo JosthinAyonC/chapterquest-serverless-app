@@ -1,6 +1,9 @@
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { jsonResponse, notImplemented } from '../../common/http';
+import { jsonResponse } from '../../common/http';
 import { logger } from '../../common/logger';
+import { LibraryService } from '../services/library.service';
+
+const libraryService = new LibraryService();
 
 export async function handler(event: APIGatewayProxyEventV2) {
   logger.info('Library handler invoked', {
@@ -8,16 +11,54 @@ export async function handler(event: APIGatewayProxyEventV2) {
     requestId: event.requestContext?.requestId,
   });
 
-  if (event.routeKey === 'GET /library') {
-    return notImplemented('Library catalog');
-  }
+  try {
+    if (event.routeKey === 'GET /library') {
+      const books = await libraryService.listCatalog();
+      return jsonResponse(200, { books });
+    }
 
-  if (event.routeKey === 'GET /library/{key}/preview-url') {
-    return notImplemented('Library PDF preview URL');
-  }
+    if (event.routeKey === 'GET /library/{key}/preview-url') {
+      const key = event.pathParameters?.key;
+      if (!key) {
+        return jsonResponse(400, {
+          error: 'validation_error',
+          message: 'Book key is required.',
+        });
+      }
 
-  return jsonResponse(404, {
-    error: 'not_found',
-    message: 'Ruta no encontrada.',
-  });
+      const url = await libraryService.getPreviewUrl(key);
+      return jsonResponse(200, { url, expiresIn: 300 });
+    }
+
+    return jsonResponse(404, {
+      error: 'not_found',
+      message: 'Ruta no encontrada.',
+    });
+  } catch (error) {
+    logger.info('Library handler error', {
+      routeKey: event.routeKey,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    if (isNotFoundError(error)) {
+      return jsonResponse(404, {
+        error: 'not_found',
+        message: 'Book not found in library.',
+      });
+    }
+
+    return jsonResponse(500, {
+      error: 'internal_error',
+      message: 'Could not load library catalog.',
+    });
+  }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name: string }).name === 'NotFound'
+  );
 }

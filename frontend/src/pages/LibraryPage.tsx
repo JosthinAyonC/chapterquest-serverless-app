@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
-import { MOCK_BOOKS } from '../mocks/books';
 import { BookCardAnimated } from '../components/BookCard';
+import { useBooks } from '../hooks/useBooks';
 import { fadeUp } from '../theme/motion';
 
 export default function LibraryPage() {
+  const { books, loading } = useBooks();
+
   return (
-    <section className="page">
+    <section className="page library-page">
       <motion.header
         className="page-header"
         initial={{ opacity: 0, y: 16 }}
@@ -15,27 +17,38 @@ export default function LibraryPage() {
         <h1>Library</h1>
         <p className="page-subtitle">
           Curated books for your literary circle. Hover a card to preview the
-          summary — language and grade level tags help you pick the right read.
+          summary — language tags help you pick the right read.
         </p>
       </motion.header>
 
-      <div className="library-grid" role="list">
-        {MOCK_BOOKS.map((book, index) => (
-          <div key={book.id} role="listitem">
-            <BookCardAnimated book={book} index={index} />
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <p className="page-subtitle">Loading catalog…</p>
+      ) : (
+        <div className="library-grid" role="list">
+          {books.map((book, index) => (
+            <div key={book.key ?? book.id} role="listitem">
+              <BookCardAnimated book={book} index={index} />
+            </div>
+          ))}
+        </div>
+      )}
 
       <motion.p
-        className="page-subtitle"
-        style={{ marginTop: '2rem', fontSize: '0.9rem' }}
+        className="library-contact-note"
         variants={fadeUp}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
       >
-        Mock catalog — live books will load from S3 via <code>GET /library</code>.
+        If you have a book you&apos;d like to add to the library, please contact
+        an{' '}
+        <a
+          className="library-contact-link"
+          href="mailto:dannabailonbailon@gmail.com"
+        >
+          admin
+        </a>
+        .
       </motion.p>
     </section>
   );

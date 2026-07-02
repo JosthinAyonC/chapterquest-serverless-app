@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 
 interface TimeUpModalProps {
   open: boolean;
+  endedEarly?: boolean;
   onGoToReview: () => void;
   onDismiss: () => void;
 }
 
 export default function TimeUpModal({
   open,
+  endedEarly = false,
   onGoToReview,
   onDismiss,
 }: TimeUpModalProps) {
@@ -32,10 +34,13 @@ export default function TimeUpModal({
             exit={{ scale: 0.92, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="time-up-title">Time&apos;s up!</h2>
+            <h2 id="time-up-title">
+              {endedEarly ? 'Activity finished early' : "Time's up!"}
+            </h2>
             <p>
-              Great work, circle! When you&apos;re ready, move on to share your
-              reviews on the wall.
+              {endedEarly
+                ? 'You wrapped up before the timer ended. When you are ready, move on to share your reviews.'
+                : 'Great work, circle! When you are ready, move on to share your reviews on the wall.'}
             </p>
             <div className="modal-actions">
               <button type="button" className="btn btn--primary" onClick={onGoToReview}>

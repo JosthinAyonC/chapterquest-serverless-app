@@ -117,13 +117,23 @@ El stack se alineó con [ProductSpec.md](./ProductSpec.md). Al redeploy:
 
 **Antes de prod:** si tenías PDFs en `*-uploads`, cópialos a `*-library/library/` con metadata antes del deploy. CloudFormation **eliminará** recursos que ya no están en el template.
 
-Subir un PDF curado (admin):
+Subir un PDF curado (admin) con portada y metadata:
 
 ```bash
-aws s3 cp book.pdf s3://dev-chapterquest-library/library/book.pdf \
-  --metadata title="Charlotte's Web",author="E.B. White",language=en \
-  --profile litcircle
+sh scripts/upload_book.sh \
+  --env dev \
+  --bookname "Charlotte's Web" \
+  --bookdescription "A tender farm story about friendship." \
+  --bookauthor "E.B. White" \
+  --booklang EN \
+  --bookaudience "+10 anos" \
+  --path ./charlottes-web.pdf \
+  --cover ./charlottes-web-cover.png
 ```
+
+Requisitos: `AWS_PROFILE=litcircle` (o exportado), bucket `{env}-chapterquest-library`. El script resuelve el bucket desde el stack `chapterquest-root-{env}`.
+
+Tras subir, verifica: `curl "$VITE_API_BASE_URL/library"` (local o API desplegada).
 
 ---
 
