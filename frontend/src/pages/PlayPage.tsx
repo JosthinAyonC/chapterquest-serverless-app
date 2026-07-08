@@ -12,6 +12,7 @@ import CircularTimer from '../components/CircularTimer';
 import DraggableReadingTimer from '../components/DraggableReadingTimer';
 import TimeUpModal from '../components/TimeUpModal';
 import ConfirmFinishModal from '../components/ConfirmFinishModal';
+import StartReadingModal from '../components/StartReadingModal';
 import BookReaderModal from '../components/BookReaderModal';
 
 function playOptionalSound() {
@@ -44,6 +45,7 @@ export default function PlayPage() {
     durationMinutes,
     remainingSeconds,
     timerRunning,
+    readingPrepared,
     selectedBook,
     endedEarly,
     setNames,
@@ -51,6 +53,7 @@ export default function PlayPage() {
     confirmRoster,
     selectBook,
     setDuration,
+    openReading,
     startTimer,
     tick,
     finishEarly,
@@ -63,6 +66,8 @@ export default function PlayPage() {
   const [modalDismissed, setModalDismissed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [readerMinimized, setReaderMinimized] = useState(false);
+  const [bookReady, setBookReady] = useState(false);
+  const [showStartReadingModal, setShowStartReadingModal] = useState(false);
 
   const totalSeconds = durationMinutes * 60;
 
@@ -88,14 +93,27 @@ export default function PlayPage() {
     spinRoulette(valid);
   };
 
-  const handleStartTimer = () => {
+  const handleOpenReading = () => {
     if (!selectedBook) return;
+    setBookReady(false);
+    setShowStartReadingModal(false);
+    openReading();
+  };
+
+  const handleStartTimer = () => {
+    setShowStartReadingModal(false);
     startTimer();
   };
 
   useEffect(() => {
-    if (timerRunning) {
+    if (readingPrepared) {
       setReaderMinimized(false);
+    }
+  }, [readingPrepared]);
+
+  useEffect(() => {
+    if (timerRunning) {
+      setShowStartReadingModal(false);
     }
   }, [timerRunning]);
 
@@ -113,12 +131,17 @@ export default function PlayPage() {
   }, [phase, modalDismissed]);
 
   useEffect(() => {
-    if (!timerRunning || !selectedBook?.key) {
+    if (!readingPrepared || !selectedBook?.key) {
       setPreviewUrl(null);
+      setBookReady(false);
+      setShowStartReadingModal(false);
       return;
     }
 
     let cancelled = false;
+    setBookReady(false);
+    setShowStartReadingModal(false);
+
     getBookPreviewUrl(selectedBook.key)
       .then((url) => {
         if (!cancelled) setPreviewUrl(url);
@@ -130,7 +153,13 @@ export default function PlayPage() {
     return () => {
       cancelled = true;
     };
-  }, [timerRunning, selectedBook?.key]);
+  }, [readingPrepared, selectedBook?.key]);
+
+  useEffect(() => {
+    if (bookReady && readingPrepared && !timerRunning) {
+      setShowStartReadingModal(true);
+    }
+  }, [bookReady, readingPrepared, timerRunning]);
 
   const handleGoToReview = () => {
     setShowModal(false);
@@ -245,7 +274,7 @@ export default function PlayPage() {
             >
               <h2>Step 3 — Reading time</h2>
 
-              {!timerRunning && phase !== 'finished' && (
+              {!readingPrepared && phase !== 'finished' && (
                 <>
                   <div className="form-field" style={{ marginBottom: '1rem' }}>
                     <label htmlFor="book-select">Select a book</label>
@@ -289,16 +318,16 @@ export default function PlayPage() {
                     <button
                       type="button"
                       className="btn btn--accent btn--lg"
-                      onClick={handleStartTimer}
+                      onClick={handleOpenReading}
                       disabled={!selectedBook}
                     >
-                      Let&apos;s start
+                      Open book
                     </button>
                   </div>
                 </>
               )}
 
-              {(timerRunning || phase === 'finished') && (
+              {(readingPrepared || phase === 'finished') && (
                 <div
                   className={`reading-session reading-session--active${readerMinimized && isMobile ? ' reading-session--minimized-mobile' : ''}`}
                 >
@@ -377,13 +406,14 @@ export default function PlayPage() {
         />
       )}
 
-      {timerRunning && selectedBook?.key && (
+      {readingPrepared && selectedBook?.key && (
         <BookReaderModal
-          open={timerRunning}
+          open={readingPrepared}
           previewUrl={previewUrl}
           bookTitle={selectedBook.title}
+          onBookReady={() => setBookReady(true)}
           headerTimer={
-            isMobile && !readerMinimized ? (
+            timerRunning && isMobile && !readerMinimized ? (
               <CircularTimer
                 remainingSeconds={remainingSeconds}
                 totalSeconds={totalSeconds}
@@ -396,6 +426,12 @@ export default function PlayPage() {
           onMinimizedChange={setReaderMinimized}
         />
       )}
+
+      <StartReadingModal
+        open={showStartReadingModal && !readerMinimized}
+        bookTitle={selectedBook?.title ?? 'your book'}
+        onStart={handleStartTimer}
+      />
     </section>
   );
 }

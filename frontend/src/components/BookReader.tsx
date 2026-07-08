@@ -11,12 +11,14 @@ import * as pdfjs from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useFullscreenBookSize } from '../hooks/useFullscreenBookSize';
 import { useIsMobile } from '../hooks/useIsMobile';
+import PageLoader from './PageLoader';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface BookReaderProps {
   previewUrl: string | null;
   layout?: 'inline' | 'fullscreen';
+  onReady?: () => void;
 }
 
 interface ReaderPageProps {
@@ -36,6 +38,7 @@ ReaderPage.displayName = 'ReaderPage';
 export default function BookReader({
   previewUrl,
   layout = 'inline',
+  onReady,
 }: BookReaderProps) {
   const [pages, setPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,11 +100,21 @@ export default function BookReader({
     };
   }, [previewUrl, pdfScale]);
 
+  const contentReady =
+    !loading &&
+    !error &&
+    pages.length > 0 &&
+    (!isFullscreen || isMobile || reducedMotion || bookSize.ready);
+
+  useEffect(() => {
+    if (contentReady) onReady?.();
+  }, [contentReady, onReady]);
+
   if (!previewUrl) return null;
 
   let content: ReactNode;
   if (loading) {
-    content = <p className="book-reader-status">Opening book…</p>;
+    content = <PageLoader label="Opening book" compact={!isFullscreen} />;
   } else if (error) {
     content = (
       <p className="book-reader-status book-reader-status--error">{error}</p>
@@ -121,7 +134,7 @@ export default function BookReader({
       </div>
     );
   } else if (isFullscreen && !bookSize.ready) {
-    content = <p className="book-reader-status">Preparing reader…</p>;
+    content = <PageLoader label="Preparing reader" compact />;
   } else {
     content = (
       <HTMLFlipBook

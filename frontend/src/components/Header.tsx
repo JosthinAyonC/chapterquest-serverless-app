@@ -40,12 +40,13 @@ export default function Header() {
       <div className="container header-inner">
         <div className="brand-group">
           <NavLink to="/" className="brand" end>
-            <span className="brand-mark" aria-hidden="true">
-              ◎
-            </span>
-            <span className="brand-text">
-              Lit<span>Circle</span>
-            </span>
+            <img
+              src="/litlecirclelogo.png"
+              alt="LitCircle"
+              className="brand-logo"
+              width={52}
+              height={52}
+            />
           </NavLink>
           <EnvironmentBadge />
         </div>

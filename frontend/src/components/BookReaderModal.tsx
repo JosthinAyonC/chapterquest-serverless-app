@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import BookReader from './BookReader';
+import PageLoader from './PageLoader';
 
 interface BookReaderModalProps {
   open: boolean;
   previewUrl: string | null;
   bookTitle: string;
   headerTimer?: ReactNode;
+  onBookReady?: () => void;
   onMinimizedChange?: (minimized: boolean) => void;
 }
 
@@ -15,6 +17,7 @@ export default function BookReaderModal({
   previewUrl,
   bookTitle,
   headerTimer,
+  onBookReady,
   onMinimizedChange,
 }: BookReaderModalProps) {
   const [minimized, setMinimized] = useState(false);
@@ -91,7 +94,15 @@ export default function BookReaderModal({
           </div>
         </header>
         <div className="book-reader-overlay-body book-reader-scroll-hidden">
-          <BookReader previewUrl={previewUrl} layout="fullscreen" />
+          {previewUrl ? (
+            <BookReader
+              previewUrl={previewUrl}
+              layout="fullscreen"
+              onReady={onBookReady}
+            />
+          ) : (
+            <PageLoader label="Opening book" />
+          )}
         </div>
       </motion.div>
     </>

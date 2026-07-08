@@ -33,6 +33,7 @@ export interface PlaySessionState {
   durationMinutes: number;
   remainingSeconds: number;
   timerRunning: boolean;
+  readingPrepared: boolean;
   endedEarly: boolean;
   reviews: MockReview[];
   rouletteSpinning: boolean;
@@ -45,6 +46,7 @@ type Action =
   | { type: 'CONFIRM_ROSTER' }
   | { type: 'SELECT_BOOK'; book: Book }
   | { type: 'SET_DURATION'; minutes: number }
+  | { type: 'OPEN_READING' }
   | { type: 'START_TIMER' }
   | { type: 'TICK' }
   | { type: 'STOP_TIMER' }
@@ -64,6 +66,7 @@ const initialState: PlaySessionState = {
   durationMinutes: DEFAULT_DURATION,
   remainingSeconds: DEFAULT_DURATION * 60,
   timerRunning: false,
+  readingPrepared: false,
   endedEarly: false,
   reviews: [...INITIAL_MOCK_REVIEWS],
   rouletteSpinning: false,
@@ -101,6 +104,14 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
         remainingSeconds: state.timerRunning ? state.remainingSeconds : seconds,
       };
     }
+    case 'OPEN_READING':
+      return {
+        ...state,
+        phase: 'timer',
+        readingPrepared: true,
+        timerRunning: false,
+        endedEarly: false,
+      };
     case 'START_TIMER':
       return {
         ...state,
@@ -152,6 +163,7 @@ interface PlaySessionContextValue extends PlaySessionState {
   confirmRoster: () => void;
   selectBook: (book: Book) => void;
   setDuration: (minutes: number) => void;
+  openReading: () => void;
   startTimer: () => void;
   tick: () => void;
   stopTimer: () => void;
@@ -188,6 +200,10 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
 
   const setDuration = useCallback((minutes: number) => {
     dispatch({ type: 'SET_DURATION', minutes });
+  }, []);
+
+  const openReading = useCallback(() => {
+    dispatch({ type: 'OPEN_READING' });
   }, []);
 
   const startTimer = useCallback(() => {
@@ -245,6 +261,7 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       confirmRoster,
       selectBook,
       setDuration,
+      openReading,
       startTimer,
       tick,
       stopTimer,
@@ -262,6 +279,7 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       confirmRoster,
       selectBook,
       setDuration,
+      openReading,
       startTimer,
       tick,
       stopTimer,

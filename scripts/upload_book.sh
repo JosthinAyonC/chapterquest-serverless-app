@@ -49,6 +49,17 @@ content_type_for() {
   esac
 }
 
+sanitize_metadata() {
+  # S3 user metadata must be ASCII-only; aws cli map breaks on commas/quotes too.
+  local value="$1"
+  value="${value//,/;}"
+  value="${value//\'/}"
+  value="${value//\"/}"
+  value="${value//—/-}"
+  value="${value//–/-}"
+  printf '%s' "$value" | LC_ALL=C tr -cd '\11\12\15\40-\176'
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --env) ENV="$2"; shift 2 ;;
@@ -129,6 +140,12 @@ fi
 PDF_CONTENT_TYPE="$(content_type_for "${PDF_PATH}")"
 COVER_CONTENT_TYPE="$(content_type_for "${COVER_PATH}")"
 
+META_TITLE="$(sanitize_metadata "${BOOK_NAME}")"
+META_AUTHOR="$(sanitize_metadata "${BOOK_AUTHOR}")"
+META_LANG="$(sanitize_metadata "${BOOK_LANG}")"
+META_DESC="$(sanitize_metadata "${BOOK_DESCRIPTION}")"
+META_AUDIENCE="$(sanitize_metadata "${BOOK_AUDIENCE}")"
+
 echo "==> Uploading cover to s3://${BUCKET}/${COVER_KEY}"
 AWS_PROFILE="${AWS_PROFILE}" AWS_REGION="${AWS_REGION}" \
   aws s3 cp "${COVER_PATH}" "s3://${BUCKET}/${COVER_KEY}" \
@@ -139,7 +156,7 @@ echo "==> Uploading PDF to s3://${BUCKET}/${PDF_KEY}"
 AWS_PROFILE="${AWS_PROFILE}" AWS_REGION="${AWS_REGION}" \
   aws s3 cp "${PDF_PATH}" "s3://${BUCKET}/${PDF_KEY}" \
     --content-type "${PDF_CONTENT_TYPE}" \
-    --metadata "title=${BOOK_NAME},author=${BOOK_AUTHOR},language=${BOOK_LANG},description=${BOOK_DESCRIPTION},audience=${BOOK_AUDIENCE},cover=${COVER_KEY}" \
+    --metadata "title=${META_TITLE},author=${META_AUTHOR},language=${META_LANG},description=${META_DESC},audience=${META_AUDIENCE},cover=${COVER_KEY}" \
     --region "${AWS_REGION}"
 
 echo ""

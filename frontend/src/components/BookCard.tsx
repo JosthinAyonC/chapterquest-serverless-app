@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import type { Book } from '../mocks/books';
 
 interface BookCardProps {
@@ -21,7 +20,7 @@ export default function BookCard({ book }: BookCardProps) {
             }
           >
             {book.coverUrl ? (
-              <img src={book.coverUrl} alt="" className="book-cover-image" />
+              <img src={book.coverUrl} alt="" className="book-cover-image" loading="lazy" />
             ) : (
               <div className="book-cover-text">
                 <h3>{book.title}</h3>
@@ -44,7 +43,7 @@ export default function BookCard({ book }: BookCardProps) {
         <div className="book-card-face book-card-back">
           <h3>{book.title}</h3>
           <p className="book-card-author">{book.author}</p>
-          <p>{book.summary}</p>
+          <p className="book-card-summary">{book.summary}</p>
         </div>
       </div>
     </article>
@@ -53,13 +52,12 @@ export default function BookCard({ book }: BookCardProps) {
 
 export function BookCardAnimated({ book, index }: BookCardProps & { index: number }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ delay: index * 0.06 }}
+    <div
+      className="library-grid-item"
+      role="listitem"
+      style={{ animationDelay: `${index * 0.06}s` }}
     >
       <BookCard book={book} />
-    </motion.div>
+    </div>
   );
 }

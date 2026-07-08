@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { BookCardAnimated } from '../components/BookCard';
+import PageLoader from '../components/PageLoader';
 import { useBooks } from '../hooks/useBooks';
 import { fadeUp } from '../theme/motion';
 
@@ -22,7 +23,7 @@ export default function LibraryPage() {
       </motion.header>
 
       {loading ? (
-        <p className="page-subtitle">Loading catalog…</p>
+        <PageLoader label="Loading library" />
       ) : error ? (
         <p className="page-subtitle" role="alert">
           {error}
@@ -32,9 +33,7 @@ export default function LibraryPage() {
       ) : (
         <div className="library-grid" role="list">
           {books.map((book, index) => (
-            <div key={book.key ?? book.id} role="listitem">
-              <BookCardAnimated book={book} index={index} />
-            </div>
+            <BookCardAnimated key={book.key ?? book.id} book={book} index={index} />
           ))}
         </div>
       )}
