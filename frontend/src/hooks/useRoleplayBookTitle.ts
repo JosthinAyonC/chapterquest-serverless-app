@@ -14,7 +14,12 @@ export interface RoleplayBookInfo {
   loading: boolean;
 }
 
-function sessionCodeFromPath(pathname: string): string | null {
+function hostSessionCodeFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/review\/host\/([^/]+)/i);
+  return match?.[1]?.trim().toUpperCase() ?? null;
+}
+
+function playerSessionCodeFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/roleplay\/([^/]+)/i);
   return match?.[1]?.trim().toUpperCase() ?? null;
 }
@@ -22,16 +27,19 @@ function sessionCodeFromPath(pathname: string): string | null {
 export function useRoleplayBookTitle(): RoleplayBookInfo {
   const { pathname } = useLocation();
   const { selectedBook } = usePlaySession();
-  const isHost = pathname === '/review/host';
-  const playerCode = sessionCodeFromPath(pathname);
-  const sessionCode = isHost ? getActiveRoleplayCode() : playerCode;
+  const isHost = pathname === '/review/host' || pathname.startsWith('/review/host/');
+  const hostCode = hostSessionCodeFromPath(pathname);
+  const playerCode = playerSessionCodeFromPath(pathname);
+  const sessionCode = isHost ? (hostCode ?? getActiveRoleplayCode()) : playerCode;
 
   const [resolvedTitle, setResolvedTitle] = useState<string | null>(null);
   const [resolvedCoverUrl, setResolvedCoverUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(Boolean(sessionCode));
 
-  const contextTitle = isHost ? (selectedBook?.title ?? null) : null;
-  const contextCoverUrl = isHost ? (selectedBook?.coverUrl ?? null) : null;
+  const contextTitle =
+    isHost && pathname === '/review/host' ? (selectedBook?.title ?? null) : null;
+  const contextCoverUrl =
+    isHost && pathname === '/review/host' ? (selectedBook?.coverUrl ?? null) : null;
   const title = contextTitle ?? resolvedTitle;
   const coverUrl = contextCoverUrl ?? resolvedCoverUrl;
 
@@ -43,9 +51,9 @@ export function useRoleplayBookTitle(): RoleplayBookInfo {
       return;
     }
 
-    if (isHost && selectedBook?.title) {
-      setResolvedTitle(selectedBook.title);
-      setResolvedCoverUrl(selectedBook.coverUrl ?? null);
+    if (contextTitle) {
+      setResolvedTitle(contextTitle);
+      setResolvedCoverUrl(contextCoverUrl);
       setLoading(false);
       return;
     }
@@ -66,12 +74,13 @@ export function useRoleplayBookTitle(): RoleplayBookInfo {
     return () => {
       cancelled = true;
     };
-  }, [isHost, selectedBook?.coverUrl, selectedBook?.title, sessionCode]);
+  }, [contextCoverUrl, contextTitle, sessionCode]);
 
   return {
     title,
     coverUrl,
-    coverColor: isHost ? (selectedBook?.coverColor ?? null) : null,
+    coverColor:
+      pathname === '/review/host' ? (selectedBook?.coverColor ?? null) : null,
     sessionCode,
     loading,
   };

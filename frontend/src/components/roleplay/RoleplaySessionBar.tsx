@@ -4,7 +4,9 @@ import { useRoleplayBookTitle } from '../../hooks/useRoleplayBookTitle';
 export default function RoleplaySessionBar() {
   const { pathname } = useLocation();
   const isRoleplayRoute =
-    pathname === '/review/host' || pathname.startsWith('/roleplay/');
+    pathname === '/review/host' ||
+    pathname.startsWith('/review/host/') ||
+    pathname.startsWith('/roleplay/');
 
   const { title, coverUrl, coverColor, sessionCode, loading } = useRoleplayBookTitle();
 

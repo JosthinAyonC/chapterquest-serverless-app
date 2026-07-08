@@ -15,6 +15,7 @@ export default function App() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="guide" element={<GuidePage />} />
         <Route path="play" element={<PlayPage />} />
+        <Route path="review/host/:code" element={<ReviewHostPage />} />
         <Route path="review/host" element={<ReviewHostPage />} />
         <Route path="roleplay/:code" element={<RoleplayPlayerPage />} />
       </Route>

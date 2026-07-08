@@ -7,6 +7,11 @@ import {
   publishRoleplaySessionApi,
   type RoleplaySessionResponse,
 } from '../api';
+import {
+  clearPendingHostCode,
+  PENDING_HOST_CODE_KEY,
+  registerHostReview,
+} from './host-reviews';
 
 export interface PublishedParticipant {
   name: string;
@@ -24,6 +29,20 @@ export interface PublishedRoleplaySession {
 }
 
 const PUBLISHED_PREFIX = 'litcircle:published:';
+const hostPublishInflight = new Map<string, Promise<PublishedRoleplaySession>>();
+
+function normalizeSessionCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
+/** Stable code for /review/host — survives React Strict Mode remounts. */
+export function getOrCreatePendingHostCode(): string {
+  const existing = sessionStorage.getItem(PENDING_HOST_CODE_KEY);
+  if (existing) return normalizeSessionCode(existing);
+  const code = generateSessionCode();
+  sessionStorage.setItem(PENDING_HOST_CODE_KEY, code);
+  return code;
+}
 
 function toPublishedSession(session: RoleplaySessionResponse): PublishedRoleplaySession {
   return {
@@ -63,21 +82,36 @@ export async function publishRoleplaySession(input: {
   book: Book | null;
   participants: PublishedParticipant[];
 }): Promise<PublishedRoleplaySession> {
-  const session = toPublishedSession(
-    await publishRoleplaySessionApi({
-      code: input.code,
-      bookTitle: input.book?.title ?? null,
-      bookKey: input.book?.key ?? null,
-      coverUrl: input.book?.coverUrl ?? null,
-      participants: input.participants.map((p) => ({
-        name: p.name,
-        roleId: p.roleId,
-      })),
-    }),
-  );
-  cachePublishedSession(session);
-  localStorage.setItem('litcircle:active-roleplay-code', session.code);
-  return session;
+  const normalizedCode = normalizeSessionCode(input.code);
+  const inflight = hostPublishInflight.get(normalizedCode);
+  if (inflight) return inflight;
+
+  const promise = (async () => {
+    const session = toPublishedSession(
+      await publishRoleplaySessionApi({
+        code: normalizedCode,
+        bookTitle: input.book?.title ?? null,
+        bookKey: input.book?.key ?? null,
+        coverUrl: input.book?.coverUrl ?? null,
+        participants: input.participants.map((p) => ({
+          name: p.name,
+          roleId: p.roleId,
+        })),
+      }),
+    );
+    cachePublishedSession(session);
+    localStorage.setItem('litcircle:active-roleplay-code', session.code);
+    registerHostReview(session.code);
+    clearPendingHostCode();
+    return session;
+  })();
+
+  hostPublishInflight.set(normalizedCode, promise);
+  try {
+    return await promise;
+  } finally {
+    hostPublishInflight.delete(normalizedCode);
+  }
 }
 
 export function loadPublishedSessionLocal(code: string): PublishedRoleplaySession | null {

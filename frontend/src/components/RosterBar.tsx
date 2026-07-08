@@ -1,18 +1,30 @@
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { getRoleById } from '../data/roles';
+import { useHostReview } from '../context/HostReviewContext';
 import { usePlaySession } from '../context/PlaySessionContext';
 
 export default function RosterBar() {
-  const { hasActiveSession, participants } = usePlaySession();
+  const { pathname } = useLocation();
+  const { participants } = usePlaySession();
+  const { hostSession } = useHostReview();
 
-  if (!hasActiveSession || participants.length === 0) return null;
+  const isHostReviewRoute = pathname.startsWith('/review/host');
+  const rosterParticipants =
+    participants.length > 0
+      ? participants
+      : isHostReviewRoute && hostSession
+        ? hostSession.participants
+        : [];
+
+  if (rosterParticipants.length === 0) return null;
 
   return (
     <aside className="roster-bar" aria-label="Roster de participantes">
       <div className="container roster-bar-inner">
         <span className="roster-label">Roster</span>
         <div className="roster-chips" role="list">
-          {participants.map((p) => {
+          {rosterParticipants.map((p) => {
             const role = getRoleById(p.roleId);
             return (
               <motion.span

@@ -1,5 +1,6 @@
 import { useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { HostReviewProvider } from '../context/HostReviewContext';
 import Header from './Header';
 import Footer from './Footer';
 import RosterBar from './RosterBar';
@@ -15,26 +16,28 @@ export default function Layout() {
   const location = useLocation();
 
   return (
-    <div className="app-shell">
-      <Header />
-      <RosterBar />
-      <RoleplaySessionBar />
-      <main className="main-content">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            className="page-transition"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.25 }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
-      <Footer />
-    </div>
+    <HostReviewProvider>
+      <div className="app-shell">
+        <Header />
+        <RosterBar />
+        <RoleplaySessionBar />
+        <main className="main-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              className="page-transition"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.25 }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+        <Footer />
+      </div>
+    </HostReviewProvider>
   );
 }
