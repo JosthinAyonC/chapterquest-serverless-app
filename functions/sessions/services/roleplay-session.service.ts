@@ -10,6 +10,8 @@ export class RoleplaySessionService {
   publish(input: {
     code: string;
     bookTitle: string | null;
+    bookKey: string | null;
+    coverUrl: string | null;
     participants: RoleplayParticipantRecord[];
   }): Promise<RoleplaySessionRecord> {
     if (!input.code.trim()) {

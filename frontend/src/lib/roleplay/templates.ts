@@ -1,4 +1,4 @@
-import type { RoleId } from '../../mocks/roles';
+import type { RoleId } from '../../types/role';
 
 export type RoleplayMode = 'online' | 'download';
 

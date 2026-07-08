@@ -116,6 +116,8 @@ export interface RoleplaySessionResponse {
   code: string;
   createdAt: string;
   bookTitle: string | null;
+  bookKey?: string | null;
+  coverUrl?: string | null;
   participants: Array<{ name: string; roleId: string }>;
   finalizedNames: string[];
 }
@@ -123,6 +125,8 @@ export interface RoleplaySessionResponse {
 export async function publishRoleplaySessionApi(input: {
   code: string;
   bookTitle: string | null;
+  bookKey?: string | null;
+  coverUrl?: string | null;
   participants: Array<{ name: string; roleId: string }>;
 }): Promise<RoleplaySessionResponse> {
   const data = await apiFetch<{ session: RoleplaySessionResponse }>('/sessions', {

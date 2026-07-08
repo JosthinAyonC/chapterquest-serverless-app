@@ -9,6 +9,8 @@ import {
 interface PublishRoleplayBody {
   code: string;
   bookTitle?: string | null;
+  bookKey?: string | null;
+  coverUrl?: string | null;
   participants: Array<{ name: string; roleId: string }>;
 }
 
@@ -22,6 +24,8 @@ function toApiSession(session: {
   code: string;
   createdAt: string;
   bookTitle: string | null;
+  bookKey: string | null;
+  coverUrl: string | null;
   participants: Array<{ name: string; roleId: string }>;
   finalizedNames: string[];
 }) {
@@ -29,6 +33,8 @@ function toApiSession(session: {
     code: session.code,
     createdAt: session.createdAt,
     bookTitle: session.bookTitle,
+    bookKey: session.bookKey,
+    coverUrl: session.coverUrl,
     participants: session.participants,
     finalizedNames: session.finalizedNames,
   };
@@ -69,6 +75,8 @@ export async function handler(event: APIGatewayProxyEventV2) {
         const session = await roleplayService.publish({
           code: body.code,
           bookTitle: body.bookTitle ?? null,
+          bookKey: body.bookKey ?? null,
+          coverUrl: body.coverUrl ?? null,
           participants: body.participants,
         });
         return jsonResponse(200, { session: toApiSession(session) });

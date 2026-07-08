@@ -6,8 +6,9 @@ import {
   useReducer,
   type ReactNode,
 } from 'react';
-import type { Book } from '../mocks/books';
-import type { RoleId } from '../mocks/roles';
+import type { Book } from '../types/book';
+import type { RoleId } from '../types/role';
+import { getDevTimerSeconds } from '../lib/env';
 
 export type PlayPhase =
   | 'setup'
@@ -50,9 +51,6 @@ type Action =
   | { type: 'RESET' };
 
 const DEFAULT_DURATION = 40;
-
-/** Quick timer testing: set to seconds (e.g. 1). Set to `null` for normal minutes-based timer. */
-const DEV_TIMER_SECONDS: number | null = 1;
 
 const initialState: PlaySessionState = {
   phase: 'setup',
@@ -114,7 +112,7 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
         phase: 'timer',
         timerRunning: true,
         endedEarly: false,
-        remainingSeconds: DEV_TIMER_SECONDS ?? state.durationMinutes * 60,
+        remainingSeconds: getDevTimerSeconds() ?? state.durationMinutes * 60,
       };
     case 'TICK':
       if (state.remainingSeconds <= 1) {

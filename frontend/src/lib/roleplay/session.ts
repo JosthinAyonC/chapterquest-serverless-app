@@ -1,5 +1,5 @@
-import type { Book } from '../../mocks/books';
-import type { RoleId } from '../../mocks/roles';
+import type { Book } from '../../types/book';
+import type { RoleId } from '../../types/role';
 import {
   ApiError,
   fetchRoleplaySessionByCode,
@@ -17,6 +17,8 @@ export interface PublishedRoleplaySession {
   code: string;
   createdAt: string;
   bookTitle: string | null;
+  bookKey: string | null;
+  coverUrl: string | null;
   participants: PublishedParticipant[];
   finalizedNames: string[];
 }
@@ -28,6 +30,8 @@ function toPublishedSession(session: RoleplaySessionResponse): PublishedRoleplay
     code: session.code,
     createdAt: session.createdAt,
     bookTitle: session.bookTitle,
+    bookKey: session.bookKey ?? null,
+    coverUrl: session.coverUrl ?? null,
     participants: session.participants.map((p) => ({
       name: p.name,
       roleId: p.roleId as RoleId,
@@ -63,6 +67,8 @@ export async function publishRoleplaySession(input: {
     await publishRoleplaySessionApi({
       code: input.code,
       bookTitle: input.book?.title ?? null,
+      bookKey: input.book?.key ?? null,
+      coverUrl: input.book?.coverUrl ?? null,
       participants: input.participants.map((p) => ({
         name: p.name,
         roleId: p.roleId,

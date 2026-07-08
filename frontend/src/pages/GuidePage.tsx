@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ROLES } from '../mocks/roles';
+import { ROLES } from '../data/roles';
 import RoleCard from '../components/RoleCard';
 import { fadeUp, staggerContainer } from '../theme/motion';
 

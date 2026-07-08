@@ -1,4 +1,4 @@
-import { getRoleById } from '../mocks/roles';
+import { getRoleById } from '../data/roles';
 import type { Participant } from '../context/PlaySessionContext';
 
 interface RosterPanelProps {

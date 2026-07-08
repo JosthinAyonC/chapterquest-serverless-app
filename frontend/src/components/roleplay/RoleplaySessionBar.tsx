@@ -6,7 +6,7 @@ export default function RoleplaySessionBar() {
   const isRoleplayRoute =
     pathname === '/review/host' || pathname.startsWith('/roleplay/');
 
-  const { title, coverColor, sessionCode, loading } = useRoleplayBookTitle();
+  const { title, coverUrl, coverColor, sessionCode, loading } = useRoleplayBookTitle();
 
   if (!isRoleplayRoute) return null;
 
@@ -14,13 +14,19 @@ export default function RoleplaySessionBar() {
     <div className="roleplay-session-bar" aria-label="Book for this review">
       <div className="container roleplay-session-bar-inner">
         <div className="roleplay-session-bar-book">
-          <span
-            className="roleplay-session-bar-cover"
-            style={{ background: coverColor ?? 'var(--color-accent)' }}
-            aria-hidden="true"
-          >
-            📖
-          </span>
+          {coverUrl ? (
+            <img
+              className="roleplay-session-bar-cover-img"
+              src={coverUrl}
+              alt=""
+            />
+          ) : (
+            <span
+              className="roleplay-session-bar-cover"
+              style={{ background: coverColor ?? 'var(--color-accent)' }}
+              aria-hidden="true"
+            />
+          )}
           <div className="roleplay-session-bar-text">
             <span className="roleplay-session-bar-label">Review for</span>
             {loading ? (

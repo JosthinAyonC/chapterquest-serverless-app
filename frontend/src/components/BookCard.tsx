@@ -1,4 +1,4 @@
-import type { Book } from '../mocks/books';
+import type { Book } from '../types/book';
 
 interface BookCardProps {
   book: Book;

@@ -16,6 +16,8 @@ export interface RoleplaySessionRecord {
   createdAt: string;
   updatedAt: string;
   bookTitle: string | null;
+  bookKey: string | null;
+  coverUrl: string | null;
   participants: RoleplayParticipantRecord[];
   finalizedNames: string[];
 }
@@ -29,6 +31,8 @@ interface RoleplaySessionDbItem {
   sessionId: string;
   accessCode: string;
   bookTitle: string | null;
+  bookKey: string | null;
+  coverUrl: string | null;
   participants: RoleplayParticipantRecord[];
   finalizedNames: string[];
   createdAt: string;
@@ -56,6 +60,8 @@ function toRecord(item: RoleplaySessionDbItem): RoleplaySessionRecord {
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     bookTitle: item.bookTitle,
+    bookKey: item.bookKey ?? null,
+    coverUrl: item.coverUrl ?? null,
     participants: item.participants.map((p) => ({ ...p })),
     finalizedNames: [...item.finalizedNames],
   };
@@ -82,6 +88,8 @@ export class RoleplaySessionRepository {
   async upsert(input: {
     code: string;
     bookTitle: string | null;
+    bookKey: string | null;
+    coverUrl: string | null;
     participants: RoleplayParticipantRecord[];
   }): Promise<RoleplaySessionRecord> {
     const accessCode = normalizeCode(input.code);
@@ -111,6 +119,8 @@ export class RoleplaySessionRepository {
       sessionId,
       accessCode,
       bookTitle: input.bookTitle,
+      bookKey: input.bookKey,
+      coverUrl: input.coverUrl,
       participants: input.participants.map((p) => ({ ...p })),
       finalizedNames: existing?.finalizedNames ?? [],
       createdAt,

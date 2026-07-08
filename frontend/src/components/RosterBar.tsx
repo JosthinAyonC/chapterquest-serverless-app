@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { getRoleById } from '../mocks/roles';
+import { getRoleById } from '../data/roles';
 import { usePlaySession } from '../context/PlaySessionContext';
 
 export default function RosterBar() {

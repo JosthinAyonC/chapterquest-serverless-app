@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import type { RoleId } from '../../mocks/roles';
+import type { RoleId } from '../../types/role';
 import { getRoleplayTemplate } from '../../lib/roleplay/templates';
 import {
   loadPlayerProgress,

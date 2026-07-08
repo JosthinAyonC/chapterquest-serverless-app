@@ -6,9 +6,8 @@ import {
   shuffleRoles,
   getRoleById,
   ROLES,
-  type Role,
-  type RoleId,
-} from '../mocks/roles';
+} from '../data/roles';
+import type { Role, RoleId } from '../types/role';
 import { preloadEmojiWheelImages } from '../utils/emojiWheelImage';
 import RouletteWheel from './RouletteWheel';
 

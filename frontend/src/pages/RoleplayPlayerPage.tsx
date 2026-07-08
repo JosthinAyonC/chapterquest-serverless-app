@@ -5,7 +5,7 @@ import ConfirmRoleIdentityModal from '../components/roleplay/ConfirmRoleIdentity
 import PageLoader from '../components/PageLoader';
 import RoleplayEditor from '../components/roleplay/RoleplayEditor';
 import { ROLEPLAY_ALREADY_RESPONDED } from '../lib/roleplay/copy';
-import { getRoleById } from '../mocks/roles';
+import { getRoleById } from '../data/roles';
 import { getRoleplayTemplate } from '../lib/roleplay/templates';
 import {
   isParticipantFinalized,

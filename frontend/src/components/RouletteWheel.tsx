@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Role } from '../mocks/roles';
+import type { Role } from '../types/role';
 
 const CANVAS_SIZE = 600;
 const SPIN_MS = 3600;
