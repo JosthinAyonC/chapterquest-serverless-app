@@ -8,7 +8,16 @@ export default function Footer() {
           LitCircle — <em>Every chapter is the beginning of a new adventure.</em>
         </p>
         <p className="footer-meta">
-          Powered by ChapterQuest · {year}
+          Powered by{' '}
+          <a
+            href="https://www.josthinayon.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
+            Josthin Ayon
+          </a>{' '}
+          · {year}
         </p>
       </div>
     </footer>

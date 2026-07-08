@@ -122,12 +122,16 @@ flowchart TD
 | `x-amz-meta-title` | *Charlotte's Web* | Título |
 | `x-amz-meta-author` | *E.B. White* | Autor |
 | `x-amz-meta-language` | `en` | Badge idioma |
-| `x-amz-meta-grade` | `5-6` | Nivel (opcional) |
-| `x-amz-meta-cover` | URL o clave S3 | Portada (opcional) |
+| `x-amz-meta-audience` | `+12 años` | Público objetivo (badge) |
+| `x-amz-meta-grade` | `5-6` | Nivel escolar (opcional) |
+| `x-amz-meta-cover` | clave S3 p. ej. `library/covers/slug.png` | Portada (presigned en catálogo) |
+| `x-amz-meta-description` | sinopsis corta | Resumen en UI |
 
-**Limitación:** metadata de usuario S3 ≈ 2 KB total por objeto — suficiente para campos de catálogo, no para sinopsis larga. Si hiciera falta texto largo, evaluar sidecar `.json` junto al PDF (decisión diferida).
+**Subida manual (curador):** script [`scripts/upload_book.sh`](../scripts/upload_book.sh) — sube PDF + portada con metadata. No hay Lambda de upload ni CRUD en app.
 
-**API prevista:** `GET /library` → Lambda lista prefijo + `HeadObject` por archivo → JSON para frontend. Preview vía **presigned GET** + visor en cliente (evaluar PDF.js / react-pdf).
+**API:** `GET /library` → catálogo JSON. `GET /library/{key}/preview-url` → presigned GET del PDF.
+
+**Visor en reading time:** flipbook dinámico (`pdfjs-dist` + `react-pageflip`) con animación de pasar página; respeta `prefers-reduced-motion` (scroll plano).
 
 ### 4.3 Guía
 
@@ -222,6 +226,7 @@ sequenceDiagram
 | R3 | Un **libro** por actividad, elegido de biblioteca curada |
 | R4 | Tiempo en **minutos**; default **40**; explicación clara al host |
 | R5 | Cronómetro **cuenta atrás**; al llegar a 0: alerta **no invasiva** (modal + sonido suave) |
+| R5b | Host puede **terminar antes** del tiempo con confirmación explícita (modal) |
 | R6 | Transición a review **manual** — botón «Realicemos el review» |
 | R7 | En review, cada participante elige **su nombre de la actividad** una sola vez |
 | R8 | Reviews **asíncronas** permitidas — identidad = nombre + rol de esa actividad |
@@ -340,9 +345,9 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 | Infra AWS (dev/prod) | ✅ Desplegado | CloudFormation, CI/CD, OIDC |
 | Guest / perfil opcional | ✅ Parcial | Cookie en `/profile` — **no** es login ni identidad en Juguemos |
 | Landing contenido cliente | 🔲 Pendiente | Copy definido; animación TBD |
-| Biblioteca S3 curada | 🔲 Pendiente | Reemplaza upload usuario |
-| Guía (6 roles) | 🔲 Pendiente | Página + copy |
-| Juguemos (ruleta, timer) | 🔲 Pendiente | Core pedagógico |
+| Biblioteca S3 curada | ✅ Parcial | `GET /library`, script upload, flipbook reader |
+| Guía (6 roles) | ✅ Mock UI | Página + copy |
+| Juguemos (ruleta, timer) | ✅ Mock UI | Ruleta secuencial, terminar antes, reader PDF |
 | WebSockets | 🔲 Pendiente | NFR sincronía |
 | Review QR / mural | 🔲 Pendiente | Flujo Kahoot/Padlet |
 | Export reporte | 🔲 Pendiente | PDF o imagen |
@@ -373,7 +378,7 @@ Eventos previstos: `session.updated`, `timer.tick`, `role.assigned`, `review.pos
 
 | # | Tema | Opciones | Recomendación inicial |
 |---|------|----------|------------------------|
-| D1 | Visor PDF | PDF.js, react-pdf, iframe presigned | PDF.js — control y offline-friendly |
+| D1 | Visor PDF | PDF.js + react-pageflip (flipbook) | **Implementado** — presigned URL + flipbook en reading time |
 | D2 | Metadata vs JSON sidecar | Solo S3 metadata vs `{book}.pdf` + `{book}.json` | Metadata si ≤6 campos; JSON si hay sinopsis larga |
 | D3 | Prefijo S3 biblioteca | `library/`, `books/en/` | `library/` plano al inicio |
 | D4 | Nombre sección actividad abierta | «Actividad en curso», «Continuar role play» | Validar con cliente |

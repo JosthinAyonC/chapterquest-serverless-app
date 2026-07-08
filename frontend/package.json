@@ -15,9 +15,12 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.1.2",
+    "framer-motion": "^12.42.2",
+    "pdfjs-dist": "^6.1.200",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.80.0",
+    "react-pageflip": "^2.0.3",
     "react-router-dom": "^7.6.3"
   },
   "devDependencies": {

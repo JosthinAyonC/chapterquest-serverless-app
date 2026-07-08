@@ -98,9 +98,13 @@ aws cloudformation describe-stacks \
 
 Actualiza `VITE_API_BASE_URL` en GitHub Variables con el `ApiEndpoint`.
 
-Actualiza `FrontendOrigin` en `infrastructure/environments/*/params.env` con la URL de CloudFront y redeploy para que CORS del bucket **library** sea correcto.
+Actualiza `FrontendOrigin` en `infrastructure/environments/*/params.env` con la URL de CloudFront del **frontend** y redeploy.
 
-**Outputs nuevos del stack:** `WebSocketEndpoint`, `LibraryBucketName`, `LibraryPrefix`.
+**Library CDN:** el stack crea una segunda distribución CloudFront para el bucket `*-library`. La API devuelve URLs de ese CDN (no presigned S3 directo). CloudFront inyecta los headers CORS.
+
+En **dev**, incluye `LocalDevOrigin=http://localhost:5173` en `params.env` para que pdf.js funcione en local. Tras deploy, copia `LibraryCdnDomainName` a `functions/.env` como `LIBRARY_CDN_DOMAIN` y reinicia `pnpm api`.
+
+**Outputs nuevos del stack:** `WebSocketEndpoint`, `LibraryBucketName`, `LibraryPrefix`, `LibraryCdnUrl`, `LibraryCdnDomainName`.
 
 ---
 
@@ -117,13 +121,23 @@ El stack se alineó con [ProductSpec.md](./ProductSpec.md). Al redeploy:
 
 **Antes de prod:** si tenías PDFs en `*-uploads`, cópialos a `*-library/library/` con metadata antes del deploy. CloudFormation **eliminará** recursos que ya no están en el template.
 
-Subir un PDF curado (admin):
+Subir un PDF curado (admin) con portada y metadata:
 
 ```bash
-aws s3 cp book.pdf s3://dev-chapterquest-library/library/book.pdf \
-  --metadata title="Charlotte's Web",author="E.B. White",language=en \
-  --profile litcircle
+sh scripts/upload_book.sh \
+  --env dev \
+  --bookname "Charlotte's Web" \
+  --bookdescription "A tender farm story about friendship." \
+  --bookauthor "E.B. White" \
+  --booklang EN \
+  --bookaudience "+10 anos" \
+  --path ./charlottes-web.pdf \
+  --cover ./charlottes-web-cover.png
 ```
+
+Requisitos: `AWS_PROFILE=litcircle` (o exportado), bucket `{env}-chapterquest-library`. El script resuelve el bucket desde el stack `chapterquest-root-{env}`.
+
+Tras subir, verifica: `curl "$VITE_API_BASE_URL/library"` (local o API desplegada).
 
 ---
 
@@ -156,6 +170,7 @@ Variables útiles en `functions/`:
 export ENV=dev
 export AWS_REGION=us-east-1
 export LOCAL_API_PORT=3001
+export LIBRARY_CDN_DOMAIN=dxxxxxxxxxxxxx.cloudfront.net
 ```
 
 ---
@@ -200,7 +215,7 @@ Resumen: handler → build esbuild → ruta local → recurso en `api/template.y
 |----------|----------|
 | OIDC assume role falla | Verifica `sub` en bootstrap coincide con org/repo/rama |
 | Lambda 502 | Revisa logs en CloudWatch; confirma S3 key del artefacto |
-| CORS en library bucket | Actualiza `FrontendOrigin` con URL real de CloudFront |
+| CORS en PDF reader | Redeploy stack (library CDN). Dev: `LocalDevOrigin=http://localhost:5173` + `LIBRARY_CDN_DOMAIN` en `functions/.env` |
 | Cert ACM pendiente | Hosted zone debe estar en la misma cuenta; espera validación DNS |
 
 ---

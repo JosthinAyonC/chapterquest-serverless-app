@@ -2,16 +2,17 @@ import { createTheme } from '@mui/material/styles';
 
 export const muiTheme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#6366f1' },
-    warning: { main: '#f59e0b' },
+    mode: 'light',
+    primary: { main: '#800000' },
+    secondary: { main: '#633A2C' },
+    warning: { main: '#B88A2C' },
     background: {
-      default: '#0f1419',
-      paper: '#1a2332',
+      default: '#E0D6B8',
+      paper: '#FFF9EF',
     },
   },
   typography: {
-    fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+    fontFamily: "'Outfit', system-ui, sans-serif",
   },
   components: {
     MuiChip: {
