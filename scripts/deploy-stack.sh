@@ -58,9 +58,6 @@ LAMBDA_FUNCTIONS=(
   "${Env}-function-users-guest:users/handlers/guest.zip"
   "${Env}-function-library-list:library/handlers/list.zip"
   "${Env}-function-sessions:sessions/handlers/session.zip"
-  "${Env}-function-ws-connect:ws/handlers/connect.zip"
-  "${Env}-function-ws-disconnect:ws/handlers/disconnect.zip"
-  "${Env}-function-ws-message:ws/handlers/message.zip"
 )
 
 for entry in "${LAMBDA_FUNCTIONS[@]}"; do

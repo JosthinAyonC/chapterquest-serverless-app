@@ -99,8 +99,6 @@ Resources:
 Outputs:
   ApiEndpoint:
     Value: !GetAtt ApiStack.Outputs.ApiEndpoint
-  WebSocketEndpoint:
-    Value: !GetAtt ApiStack.Outputs.WebSocketEndpoint
   FrontendUrl:
     Value: !GetAtt FrontendStack.Outputs.FrontendUrl
   FrontendBucketName:

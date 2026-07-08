@@ -128,50 +128,13 @@ app.get('/sessions/by-code/:accessCode', (req, res) =>
     { accessCode: req.params.accessCode },
   ),
 );
-app.get('/sessions/:sessionId', (req, res) =>
-  invokeHandler(req, res, sessionHandler, 'GET /sessions/{sessionId}', {
-    sessionId: req.params.sessionId,
-  }),
-);
-app.patch('/sessions/:sessionId', (req, res) =>
-  invokeHandler(req, res, sessionHandler, 'PATCH /sessions/{sessionId}', {
-    sessionId: req.params.sessionId,
-  }),
-);
-app.post('/sessions/:sessionId/close', (req, res) =>
+app.post('/sessions/by-code/:accessCode/finalize', (req, res) =>
   invokeHandler(
     req,
     res,
     sessionHandler,
-    'POST /sessions/{sessionId}/close',
-    { sessionId: req.params.sessionId },
-  ),
-);
-app.post('/sessions/:sessionId/reviews/claim', (req, res) =>
-  invokeHandler(
-    req,
-    res,
-    sessionHandler,
-    'POST /sessions/{sessionId}/reviews/claim',
-    { sessionId: req.params.sessionId },
-  ),
-);
-app.post('/sessions/:sessionId/reviews', (req, res) =>
-  invokeHandler(
-    req,
-    res,
-    sessionHandler,
-    'POST /sessions/{sessionId}/reviews',
-    { sessionId: req.params.sessionId },
-  ),
-);
-app.get('/sessions/:sessionId/export', (req, res) =>
-  invokeHandler(
-    req,
-    res,
-    sessionHandler,
-    'GET /sessions/{sessionId}/export',
-    { sessionId: req.params.sessionId },
+    'POST /sessions/by-code/{accessCode}/finalize',
+    { accessCode: req.params.accessCode },
   ),
 );
 

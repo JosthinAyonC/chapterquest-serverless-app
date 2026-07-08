@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 
 interface TimeUpModalProps {
   open: boolean;
@@ -39,16 +38,13 @@ export default function TimeUpModal({
             </h2>
             <p>
               {endedEarly
-                ? 'You wrapped up before the timer ended. When you are ready, move on to share your reviews.'
-                : 'Great work, circle! When you are ready, move on to share your reviews on the wall.'}
+                ? 'You wrapped up before the timer ended. When you are ready, invite the circle to complete their role reviews.'
+                : 'Great work, circle! When you are ready, share the QR so everyone can complete their role review.'}
             </p>
             <div className="modal-actions">
               <button type="button" className="btn btn--primary" onClick={onGoToReview}>
-                Let&apos;s review
+                Start role reviews
               </button>
-              <Link to="/review" className="btn btn--secondary" onClick={onGoToReview}>
-                Go to Review Wall
-              </Link>
             </div>
           </motion.div>
         </motion.div>

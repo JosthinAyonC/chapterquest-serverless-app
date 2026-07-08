@@ -8,7 +8,6 @@ const navItems = [
   { to: '/library', label: 'Library' },
   { to: '/guide', label: 'Guide' },
   { to: '/play', label: 'Play' },
-  { to: '/review', label: 'Review' },
 ];
 
 function MenuIcon({ open }: { open: boolean }) {

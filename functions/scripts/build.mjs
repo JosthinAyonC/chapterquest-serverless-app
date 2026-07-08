@@ -12,7 +12,6 @@ const HANDLER_DIRS = [
   'users',
   'library',
   'sessions',
-  'ws',
 ];
 
 function findHandlers() {

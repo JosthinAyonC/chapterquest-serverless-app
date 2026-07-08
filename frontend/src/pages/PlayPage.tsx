@@ -57,7 +57,6 @@ export default function PlayPage() {
     startTimer,
     tick,
     finishEarly,
-    goToReview,
   } = usePlaySession();
 
   const [nameError, setNameError] = useState('');
@@ -68,6 +67,7 @@ export default function PlayPage() {
   const [readerMinimized, setReaderMinimized] = useState(false);
   const [bookReady, setBookReady] = useState(false);
   const [showStartReadingModal, setShowStartReadingModal] = useState(false);
+  const [timerStarted, setTimerStarted] = useState(false);
 
   const totalSeconds = durationMinutes * 60;
 
@@ -102,6 +102,7 @@ export default function PlayPage() {
 
   const handleStartTimer = () => {
     setShowStartReadingModal(false);
+    setTimerStarted(true);
     startTimer();
   };
 
@@ -156,15 +157,14 @@ export default function PlayPage() {
   }, [readingPrepared, selectedBook?.key]);
 
   useEffect(() => {
-    if (bookReady && readingPrepared && !timerRunning) {
+    if (bookReady && readingPrepared && !timerStarted && phase === 'timer') {
       setShowStartReadingModal(true);
     }
-  }, [bookReady, readingPrepared, timerRunning]);
+  }, [bookReady, readingPrepared, timerStarted, phase]);
 
   const handleGoToReview = () => {
     setShowModal(false);
-    goToReview();
-    navigate('/review');
+    navigate('/review/host');
   };
 
   const handleConfirmFinishEarly = () => {

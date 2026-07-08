@@ -209,12 +209,14 @@ sequenceDiagram
   end
   SYS->>H: Modal suave + sonido ligero — tiempo finalizado
   H->>SYS: Clic manual «Pasemos a las reviews»
-  SYS->>H: Pantalla review + QR + enlace
-  P->>SYS: QR / código → elige su nombre (único)
-  P->>SYS: Escribe review
-  SYS->>SYS: Nombre queda no disponible
+  SYS->>H: Pantalla Kahoot-like: QR + enlace + instrucciones
+  P->>SYS: QR / enlace → elige nombre → ve su rol
+  P->>SYS: Online (plantilla PDF editable) o descarga PDF
+  P->>SYS: Finaliza → mensaje de entrega a la maestra
+  H->>SYS: Ve progreso local (X/6 finalizados)
+  Note over H,P: Respuestas solo en localStorage del dispositivo del estudiante
   H->>SYS: Cierra actividad cuando convenga
-  H->>SYS: Descarga reporte / captura / PDF mural
+  H->>SYS: Descarga reporte / plantillas completadas (futuro)
 ```
 
 ### 6.1 Reglas de negocio
@@ -227,9 +229,13 @@ sequenceDiagram
 | R4 | Tiempo en **minutos**; default **40**; explicación clara al host |
 | R5 | Cronómetro **cuenta atrás**; al llegar a 0: alerta **no invasiva** (modal + sonido suave) |
 | R5b | Host puede **terminar antes** del tiempo con confirmación explícita (modal) |
-| R6 | Transición a review **manual** — botón «Realicemos el review» |
-| R7 | En review, cada participante elige **su nombre de la actividad** una sola vez |
-| R8 | Reviews **asíncronas** permitidas — identidad = nombre + rol de esa actividad |
+| R6 | Transición a review **manual** — botón «Start role reviews» / pantalla host |
+| R7 | En review, cada participante elige **su nombre de la actividad** |
+| R8 | Cada rol usa **plantilla PDF** propia (`public/reviews/`) — 6 roles |
+| R8b | Participante puede completar **en línea** (overlay sobre PDF) o **descargar** e imprimir |
+| R8c | Progreso del worksheet **solo en localStorage** del navegador del estudiante — no se persisten respuestas en servidor |
+| R8d | Tras finalizar, mensaje de **agradecimiento** + entregar a la maestra |
+| R8e | *(Futuro)* Cuando los 6 finalicen, review **solo lectura** — descarga de plantilla guardada |
 | R9 | Host **cierra la actividad** explícitamente para poder iniciar otra |
 | R10 | Host puede **exportar** reporte (PDF o imagen del mural) |
 
@@ -246,28 +252,108 @@ No hay registro ni inicio de sesión. Para la actividad y las reviews:
 
 ---
 
-## 7. Flujo de review (mural)
+## 7. Flujo de role review (plantillas PDF)
+
+> **Cambio de alcance (2026):** el mural Padlet-like queda como prototipo legacy (`/review`). El flujo principal es **plantilla por rol** + entrada tipo Kahoot.
+
+### 7.1 ¿Qué es un Review?
+
+**What is a Review?**
+
+A review is your personal opinion about a book. Before creating it, think about your audience. You can make your review for classmates your age or for adults, using language and ideas that fit your readers or viewers. Share your review as a video, infographic, or short written post.
+
+**Objective**
+
+To express your ideas in English, reflect on your reading, and communicate effectively by adapting your review to a specific audience through a creative format.
+
+En la actividad del círculo literario, cada participante completa su review **desde el rol asignado** usando la plantilla PDF correspondiente (worksheet). Las plantillas guían la reflexión según el rol — Facilitator, Discussion Director, Investigator, Connector, Illustrator, Vocabulary Inspector — para que cada voz aporte algo distinto al grupo.
+
+### 7.2 Pantalla host (proyector / tablet del facilitador)
+
+Estilo **Kahoot**: código grande, **QR**, botón **copiar enlace**, y guía secuencial:
+
+1. Escanea el QR o abre el enlace en el navegador.
+2. Elige tu nombre del roster.
+3. Elige completar **en línea** o **descargar** la plantilla PDF.
+4. Completa el worksheet y pulsa **Finish**.
+5. Entrega tu review a la maestra.
+
+**Ruta:** `/review/host` (navegación desde Juguemos al terminar el timer).
+
+**URL del jugador:** `/roleplay/{code}` — el código identifica la actividad publicada.
+
+### 7.3 Vista jugador (roleplay)
+
+```mermaid
+flowchart TD
+  entry[QR o enlace /roleplay/CODE]
+  name[Paso 1: elegir nombre]
+  role[Paso 2: sistema muestra rol asignado]
+  mode[Paso 3: en línea vs descargar PDF]
+  online[Paso 3.1: editor sobre plantilla]
+  download[Paso 3.2: descarga plantilla]
+  finish[Paso 4: Finalizar]
+  thanks[Agradecimiento + entregar a maestra]
+
+  entry --> name --> role --> mode
+  mode -->|online| online --> finish
+  mode -->|download| download --> finish
+  finish --> thanks
+```
+
+| Paso | Comportamiento |
+|------|----------------|
+| **1. Nombre** | Selector entre los 6 nombres de la actividad |
+| **2. Rol** | El sistema resuelve el rol automáticamente (ruleta previa) |
+| **3. Modo** | **En línea:** overlay de campos de texto sobre PDF renderizado; rol **Illustrator** incluye lienzo de dibujo. **Descargar:** `GET` de `/reviews/{ROLE}.pdf` |
+| **3.1.1 Persistencia** | `localStorage` por `{code}:{nombre}` — advertir al usuario que el progreso vive en **este navegador** |
+| **4. Finalizar** | Marca participante como completado (local); pantalla de gracias |
+| **Impresión** | Botón imprimir en modo en línea |
+
+**Plantillas PDF** (curadas, en `frontend/public/reviews/`):
+
+| Rol | Archivo |
+|-----|---------|
+| Facilitator | `FACILITATOR.pdf` |
+| Discussion Director | `DISCUSSION_DIRECTOR.pdf` |
+| Investigator | `INVESTIGATOR.pdf` |
+| Connector | `CONNECTOR.pdf` |
+| Illustrator | `ILLUSTRATOR.pdf` |
+| Vocabulary Inspector | `VOCABULARY_INSPECTOR.pdf` |
+
+### 7.4 Persistencia y límites actuales
+
+| Dato | Dónde vive | Notas |
+|------|------------|-------|
+| Roster + roles + código | DynamoDB `dev-chapterquest-sessions` (GSI1 `CODE#`) | `POST /sessions`, `GET /sessions/by-code/{code}` |
+| Respuestas / dibujos del worksheet | `localStorage` del dispositivo del estudiante | **No** se envían al servidor |
+| Estado «finalizado» | `localStorage` (host + jugador) | Futuro: bloqueo cuando 6/6 |
+
+### 7.5 Futuro (no funcional en MVP)
+
+- Cuando **los 6** hayan finalizado → actividad en modo **solo lectura**.
+- Solo **descarga** de la plantilla guardada (editada o impresa).
+- Editor en línea con posiciones de campos **por plantilla** (coordenadas Illustrator) y herramienta de anotación PDF más avanzada.
+
+### 7.6 Legacy — mural Padlet (`/review`)
+
+Prototipo con tarjetas de texto y mural simulado. Se mantiene temporalmente; no es el flujo acordado con el cliente.
 
 ```mermaid
 flowchart LR
   host[Host - pantalla Kahoot-like]
   qr[QR + código + enlace]
   student[Estudiante]
-  board[Mural Padlet-like]
+  template[Plantilla PDF por rol]
 
   host --> qr
   student -->|escanea o pega enlace| pick[Selecciona nombre]
-  pick --> write[Escribe review]
-  write --> board
-  host --> board
-  host --> export[Reporte PDF / screenshot]
+  pick --> role[Muestra rol]
+  role --> template
+  host --> progress[Progreso X/6 finalizados]
 ```
 
-**UI host:** código grande, QR, botón copiar enlace.
-
-**UI participante:** selector de nombre (solo los 6 de la actividad) → muestra su rol asignado → textarea/tarjeta → envío al mural con etiqueta **nombre · rol**.
-
-**Sincronización:** cuando un participante publica, el mural del host se actualiza (WebSocket o polling; ver §9).
+**Sincronización (futuro):** WebSocket o polling para progreso host cuando exista API de sesión.
 
 ---
 

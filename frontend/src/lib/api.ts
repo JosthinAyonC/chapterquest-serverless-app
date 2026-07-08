@@ -111,3 +111,50 @@ export async function getBookPreviewUrl(key: string): Promise<string> {
   );
   return data.url;
 }
+
+export interface RoleplaySessionResponse {
+  code: string;
+  createdAt: string;
+  bookTitle: string | null;
+  participants: Array<{ name: string; roleId: string }>;
+  finalizedNames: string[];
+}
+
+export async function publishRoleplaySessionApi(input: {
+  code: string;
+  bookTitle: string | null;
+  participants: Array<{ name: string; roleId: string }>;
+}): Promise<RoleplaySessionResponse> {
+  const data = await apiFetch<{ session: RoleplaySessionResponse }>('/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  return data.session;
+}
+
+export async function fetchRoleplaySessionByCode(
+  code: string,
+): Promise<RoleplaySessionResponse> {
+  const encoded = encodeURIComponent(code.trim().toUpperCase());
+  const data = await apiFetch<{ session: RoleplaySessionResponse }>(
+    `/sessions/by-code/${encoded}`,
+  );
+  return data.session;
+}
+
+export async function finalizeRoleplayParticipantApi(
+  code: string,
+  participantName: string,
+): Promise<RoleplaySessionResponse> {
+  const encoded = encodeURIComponent(code.trim().toUpperCase());
+  const data = await apiFetch<{ session: RoleplaySessionResponse }>(
+    `/sessions/by-code/${encoded}/finalize`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantName }),
+    },
+  );
+  return data.session;
+}

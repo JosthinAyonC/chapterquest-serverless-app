@@ -33,8 +33,8 @@ Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs
 | Biblioteca S3 + preview PDF | 🔲 |
 | Guía + 6 roles | 🔲 |
 | Juguemos (ruleta, timer, actividad) | 🔲 |
-| WebSockets (sync en aula) | 🔲 |
-| Review QR / mural / export | 🔲 |
+| Role review (host QR + player wizard) | ✅ |
+| WebSockets / mural en tiempo real | ❌ Removido — fuera del flujo principal |
 
 ---
 
@@ -43,7 +43,7 @@ Flujo completo, roles, reglas de negocio y roadmap: **[docs/ProductSpec.md](docs
 | Capa | Tecnología |
 |------|------------|
 | Frontend | React, TypeScript, Vite, React Router, MUI (chips) |
-| Backend | AWS Lambda, API Gateway HTTP API (+ WebSocket planificado), TypeScript |
+| Backend | AWS Lambda, API Gateway HTTP API, TypeScript |
 | Datos | DynamoDB, S3 |
 | Infra | CloudFormation (nested stacks) |
 | CI/CD | GitHub Actions + OIDC |

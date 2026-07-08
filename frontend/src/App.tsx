@@ -4,7 +4,8 @@ import LandingPage from './pages/LandingPage';
 import LibraryPage from './pages/LibraryPage';
 import GuidePage from './pages/GuidePage';
 import PlayPage from './pages/PlayPage';
-import ReviewPage from './pages/ReviewPage';
+import ReviewHostPage from './pages/ReviewHostPage';
+import RoleplayPlayerPage from './pages/RoleplayPlayerPage';
 
 export default function App() {
   return (
@@ -14,7 +15,8 @@ export default function App() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="guide" element={<GuidePage />} />
         <Route path="play" element={<PlayPage />} />
-        <Route path="review" element={<ReviewPage />} />
+        <Route path="review/host" element={<ReviewHostPage />} />
+        <Route path="roleplay/:code" element={<RoleplayPlayerPage />} />
       </Route>
     </Routes>
   );

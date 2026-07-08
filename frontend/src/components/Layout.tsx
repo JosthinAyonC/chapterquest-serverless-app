@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Header from './Header';
 import Footer from './Footer';
 import RosterBar from './RosterBar';
+import RoleplaySessionBar from './roleplay/RoleplaySessionBar';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -17,6 +18,7 @@ export default function Layout() {
     <div className="app-shell">
       <Header />
       <RosterBar />
+      <RoleplaySessionBar />
       <main className="main-content">
         <AnimatePresence mode="wait">
           <motion.div
