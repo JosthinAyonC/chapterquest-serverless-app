@@ -120,15 +120,6 @@ export default function RoleplayPlayerPage() {
     };
   }, [sessionCode]);
 
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      void loadPublishedSession(sessionCode).then((published) => {
-        if (published) setSession(published);
-      });
-    }, 2000);
-    return () => window.clearInterval(id);
-  }, [sessionCode]);
-
   const participant = session?.participants.find((p) => p.name === selectedName);
   const pendingParticipant = session?.participants.find((p) => p.name === pendingName);
   const role = participant ? getRoleById(participant.roleId) : null;

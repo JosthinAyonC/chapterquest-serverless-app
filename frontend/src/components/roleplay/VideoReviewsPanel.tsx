@@ -13,29 +13,6 @@ export interface VideoReviewsPanelProps {
   sessionCode: string;
 }
 
-function sameVideoRoster(a: SessionVideoItem[], b: SessionVideoItem[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every(
-    (item, index) =>
-      item.participantName === b[index]?.participantName &&
-      item.uploadedAt === b[index]?.uploadedAt,
-  );
-}
-
-function mergeVideoUrls(
-  previous: SessionVideoItem[],
-  incoming: SessionVideoItem[],
-): SessionVideoItem[] {
-  return incoming.map((item) => {
-    const existing = previous.find(
-      (video) =>
-        video.participantName === item.participantName &&
-        video.uploadedAt === item.uploadedAt,
-    );
-    return existing ? { ...item, url: existing.url } : item;
-  });
-}
-
 export default function VideoReviewsPanel({ sessionCode }: VideoReviewsPanelProps) {
   const [videos, setVideos] = useState<SessionVideoItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,33 +21,24 @@ export default function VideoReviewsPanel({ sessionCode }: VideoReviewsPanelProp
   useEffect(() => {
     let cancelled = false;
 
-    const load = async (isInitial: boolean) => {
-      try {
-        const items = await loadSessionVideos(sessionCode);
+    void loadSessionVideos(sessionCode)
+      .then((items) => {
         if (cancelled) return;
-
-        setVideos((previous) => {
-          if (isInitial || !sameVideoRoster(previous, items)) {
-            return items;
-          }
-          return mergeVideoUrls(previous, items);
-        });
+        setVideos(items);
         setError('');
-      } catch {
+      })
+      .catch(() => {
         if (!cancelled) {
           setVideos([]);
           setError(HOST_VIDEOS_ERROR);
         }
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false);
-      }
-    };
+      });
 
-    void load(true);
-    const id = window.setInterval(() => void load(false), 30_000);
     return () => {
       cancelled = true;
-      window.clearInterval(id);
     };
   }, [sessionCode]);
 
@@ -91,10 +59,7 @@ export default function VideoReviewsPanel({ sessionCode }: VideoReviewsPanelProp
       {videos.map((video) => {
         const role = getRoleById(video.roleId as RoleId);
         return (
-          <article
-            key={video.participantName}
-            className="video-review-card"
-          >
+          <article key={video.participantName} className="video-review-card">
             <header className="video-review-card-header">
               <h3>{video.participantName}</h3>
               {role ? (

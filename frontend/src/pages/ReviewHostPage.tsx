@@ -34,7 +34,6 @@ export default function ReviewHostPage() {
     [codeParam],
   );
 
-  const [finalizedCount, setFinalizedCount] = useState(0);
   const [accessDenied, setAccessDenied] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(isRecoveryRoute);
   const [activeTab, setActiveTab] = useState<HostReviewBookPage>('instructions');
@@ -119,25 +118,7 @@ export default function ReviewHostPage() {
   const rosterSize = isRecoveryRoute
     ? (activeSession?.participants.length ?? 0)
     : participants.length;
-
-  useEffect(() => {
-    if (!isRecoveryRoute || sessionLoading || accessDenied) return;
-
-    let cancelled = false;
-
-    const refresh = async () => {
-      const current = await loadPublishedSession(sessionCode);
-      if (!current || cancelled) return;
-      setFinalizedCount(current.finalizedNames.length);
-    };
-
-    void refresh();
-    const id = window.setInterval(() => void refresh(), 2000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [accessDenied, isRecoveryRoute, sessionCode, sessionLoading]);
+  const finalizedCount = activeSession?.finalizedNames.length ?? 0;
 
   const playerUrl = buildRoleplayPlayerUrl(sessionCode);
 
