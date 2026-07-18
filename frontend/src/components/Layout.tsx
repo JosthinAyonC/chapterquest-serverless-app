@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { HostReviewProvider } from '../context/HostReviewContext';
 import Header from './Header';
 import Footer from './Footer';
+import CookieConsentBanner from './CookieConsentBanner';
 import RosterBar from './RosterBar';
 import RoleplaySessionBar from './roleplay/RoleplaySessionBar';
 
@@ -37,6 +38,7 @@ export default function Layout() {
           </AnimatePresence>
         </main>
         <Footer />
+        <CookieConsentBanner />
       </div>
     </HostReviewProvider>
   );

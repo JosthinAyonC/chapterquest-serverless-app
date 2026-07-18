@@ -3,8 +3,13 @@ import type { RoleId } from '../../types/role';
 import {
   ApiError,
   fetchRoleplaySessionByCode,
+  fetchSessionVideosApi,
   finalizeRoleplayParticipantApi,
   publishRoleplaySessionApi,
+  requestVideoUploadUrlApi,
+  uploadReviewVideoToS3,
+  type SessionVideoResponse,
+  type UploadProgressEvent,
   type RoleplaySessionResponse,
 } from '../api';
 import {
@@ -140,27 +145,6 @@ export async function loadPublishedSession(
   }
 }
 
-export async function markParticipantFinalized(
-  code: string,
-  participantName: string,
-): Promise<PublishedRoleplaySession | null> {
-  try {
-    const session = toPublishedSession(
-      await finalizeRoleplayParticipantApi(code, participantName),
-    );
-    cachePublishedSession(session);
-    return session;
-  } catch {
-    const session = loadPublishedSessionLocal(code);
-    if (!session) return null;
-    if (!session.finalizedNames.includes(participantName)) {
-      session.finalizedNames.push(participantName);
-    }
-    cachePublishedSession(session);
-    return session;
-  }
-}
-
 export function isParticipantFinalized(
   session: PublishedRoleplaySession,
   participantName: string,
@@ -170,4 +154,59 @@ export function isParticipantFinalized(
 
 export function getActiveRoleplayCode(): string | null {
   return localStorage.getItem('litcircle:active-roleplay-code');
+}
+
+export type { SessionVideoResponse as SessionVideoItem };
+
+export async function getVideoUploadUrl(input: {
+  code: string;
+  participantName: string;
+  contentType: string;
+  sizeBytes: number;
+}) {
+  return requestVideoUploadUrlApi(input);
+}
+
+export async function uploadReviewVideo(input: {
+  code: string;
+  participantName: string;
+  file: File;
+  onProgress?: (event: UploadProgressEvent) => void;
+}): Promise<{ key: string; contentType: string }> {
+  const { uploadUrl, key } = await getVideoUploadUrl({
+    code: input.code,
+    participantName: input.participantName,
+    contentType: input.file.type,
+    sizeBytes: input.file.size,
+  });
+  await uploadReviewVideoToS3(uploadUrl, input.file, input.onProgress);
+  return { key, contentType: input.file.type };
+}
+
+export async function finalizeWithVideo(
+  code: string,
+  participantName: string,
+  videoKey: string,
+  videoContentType: string,
+): Promise<PublishedRoleplaySession | null> {
+  try {
+    const session = toPublishedSession(
+      await finalizeRoleplayParticipantApi(
+        code,
+        participantName,
+        videoKey,
+        videoContentType,
+      ),
+    );
+    cachePublishedSession(session);
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+export async function loadSessionVideos(
+  code: string,
+): Promise<SessionVideoResponse[]> {
+  return fetchSessionVideosApi(code);
 }

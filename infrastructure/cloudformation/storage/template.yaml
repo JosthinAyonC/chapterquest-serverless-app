@@ -125,6 +125,35 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${LibraryCloudFrontDistribution}
 
+  ReviewsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Env}-chapterquest-reviews
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [PUT, GET, HEAD]
+            AllowedOrigins: !If
+              - HasLocalDevOrigin
+              - [!Ref FrontendOrigin, !Ref LocalDevOrigin]
+              - [!Ref FrontendOrigin]
+            ExposedHeaders: [ETag]
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireReviewVideos
+            Status: Enabled
+            ExpirationInDays: 30
+
 Outputs:
   FrontendBucketName:
     Value: !Ref FrontendBucket
@@ -154,3 +183,11 @@ Outputs:
     Value: !Sub https://${LibraryCloudFrontDistribution.DomainName}
     Export:
       Name: !Sub ${Env}-chapterquest-library-cdn-url
+  ReviewsBucketName:
+    Value: !Ref ReviewsBucket
+    Export:
+      Name: !Sub ${Env}-chapterquest-reviews-bucket
+  ReviewsBucketArn:
+    Value: !GetAtt ReviewsBucket.Arn
+    Export:
+      Name: !Sub ${Env}-chapterquest-reviews-bucket-arn

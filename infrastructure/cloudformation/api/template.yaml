@@ -42,6 +42,9 @@ Parameters:
     Type: String
     Default: ''
     Description: CloudFront domain for library PDFs and covers (no protocol)
+  ReviewsBucketName:
+    Type: String
+    Description: Private S3 bucket for participant review videos
 
 Conditions:
   UseCustomDomain: !Equals [!Ref EnableCustomDomain, 'true']
@@ -201,6 +204,16 @@ Resources:
                 Resource:
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}/index/*
+        - PolicyName: S3ReviewsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:HeadObject
+                Resource: !Sub arn:aws:s3:::${ReviewsBucketName}/*
 
   SessionsFunction:
     Type: AWS::Lambda::Function
@@ -217,6 +230,8 @@ Resources:
           SESSIONS_TABLE: !Ref SessionsTableName
           LIBRARY_BUCKET: !Ref LibraryBucketName
           LIBRARY_PREFIX: !Ref LibraryPrefix
+          REVIEWS_BUCKET: !Ref ReviewsBucketName
+          REVIEWS_MAX_BYTES: '209715200'
       Code:
         S3Bucket: !Ref LambdaArtifactsBucket
         S3Key: !Sub ${Env}/lambdas/${SessionsLambdaS3Key}
@@ -312,6 +327,20 @@ Resources:
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: POST /sessions/by-code/{accessCode}/finalize
+      Target: !Sub integrations/${SessionsIntegration}
+
+  SessionsByCodeVideosUploadUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: POST /sessions/by-code/{accessCode}/videos/upload-url
+      Target: !Sub integrations/${SessionsIntegration}
+
+  SessionsByCodeVideosRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /sessions/by-code/{accessCode}/videos
       Target: !Sub integrations/${SessionsIntegration}
 
   ApiStage:

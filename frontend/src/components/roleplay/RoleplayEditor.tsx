@@ -25,14 +25,14 @@ interface RoleplayEditorProps {
   sessionCode: string;
   participantName: string;
   roleId: RoleId;
-  onFinalize: () => void;
+  onWorksheetComplete: () => void;
 }
 
 export default function RoleplayEditor({
   sessionCode,
   participantName,
   roleId,
-  onFinalize,
+  onWorksheetComplete,
 }: RoleplayEditorProps) {
   const template = getRoleplayTemplate(roleId);
   const isIllustrator = roleId === 'illustrator';
@@ -159,7 +159,7 @@ export default function RoleplayEditor({
 
   const handleFinalize = () => {
     if (!requireAllPagesComplete()) return;
-    onFinalize();
+    onWorksheetComplete();
   };
 
   const allPagesComplete = allPagesHaveContent(editor.pagesWithContent);

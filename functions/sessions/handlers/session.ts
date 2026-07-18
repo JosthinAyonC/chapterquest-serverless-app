@@ -16,6 +16,14 @@ interface PublishRoleplayBody {
 
 interface FinalizeRoleplayBody {
   participantName: string;
+  videoKey?: string;
+  videoContentType?: string;
+}
+
+interface VideoUploadUrlBody {
+  participantName: string;
+  contentType: string;
+  sizeBytes: number;
 }
 
 const roleplayService = new RoleplaySessionService();
@@ -42,7 +50,8 @@ function toApiSession(session: {
 
 function handleRoleplayError(error: unknown): ReturnType<typeof jsonResponse> | null {
   if (error instanceof RoleplaySessionError) {
-    return jsonResponse(400, {
+    const status = error.code === 'not_found' ? 404 : 400;
+    return jsonResponse(status, {
       error: error.code,
       message: error.message,
     });
@@ -110,6 +119,7 @@ export async function handler(event: APIGatewayProxyEventV2) {
         const session = await roleplayService.finalizeParticipant(
           accessCode,
           body.participantName,
+          body.videoKey,
         );
         if (!session) {
           return jsonResponse(404, {
@@ -118,6 +128,39 @@ export async function handler(event: APIGatewayProxyEventV2) {
           });
         }
         return jsonResponse(200, { session: toApiSession(session) });
+      }
+      case 'POST /sessions/by-code/{accessCode}/videos/upload-url': {
+        const accessCode = event.pathParameters?.accessCode;
+        const body = parseBody<VideoUploadUrlBody>(event);
+        if (
+          !accessCode ||
+          !body?.participantName ||
+          !body.contentType ||
+          !Number.isFinite(body.sizeBytes)
+        ) {
+          return jsonResponse(400, {
+            error: 'invalid_request',
+            message: 'accessCode, participantName, contentType, and sizeBytes are required.',
+          });
+        }
+        const result = await roleplayService.createVideoUploadUrl({
+          accessCode,
+          participantName: body.participantName,
+          contentType: body.contentType,
+          sizeBytes: body.sizeBytes,
+        });
+        return jsonResponse(200, result);
+      }
+      case 'GET /sessions/by-code/{accessCode}/videos': {
+        const accessCode = event.pathParameters?.accessCode;
+        if (!accessCode) {
+          return jsonResponse(400, {
+            error: 'invalid_request',
+            message: 'accessCode is required.',
+          });
+        }
+        const videos = await roleplayService.listSessionVideos(accessCode);
+        return jsonResponse(200, { videos });
       }
       default:
         return jsonResponse(404, {

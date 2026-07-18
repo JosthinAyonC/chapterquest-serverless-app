@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import ConfirmRoleIdentityModal from '../components/roleplay/ConfirmRoleIdentityModal';
 import PageLoader from '../components/PageLoader';
 import RoleplayEditor from '../components/roleplay/RoleplayEditor';
+import UploadVideoStep from '../components/roleplay/UploadVideoStep';
 import { ROLEPLAY_ALREADY_RESPONDED } from '../lib/roleplay/copy';
 import { getRoleById } from '../data/roles';
 import { getRoleplayTemplate } from '../lib/roleplay/templates';
 import {
+  finalizeWithVideo,
   isParticipantFinalized,
   loadPublishedSession,
-  markParticipantFinalized,
   type PublishedRoleplaySession,
 } from '../lib/roleplay/session';
 import {
@@ -18,6 +19,7 @@ import {
   hasAlreadyResponded,
   loadPlayerProgress,
   loadPlayerUiState,
+  markWorksheetComplete,
   resolveStepFromProgress,
   savePlayerProgress,
   savePlayerUiState,
@@ -94,7 +96,13 @@ export default function RoleplayPlayerPage() {
         }
 
         if (ui.identityConfirmed) {
-          setStep(ui.step === 'name' ? 'role' : ui.step);
+          const resolved =
+            ui.step === 'name'
+              ? 'role'
+              : ui.step === 'upload-video' || saved.worksheetComplete
+                ? resolveStepFromProgress(saved)
+                : ui.step;
+          setStep(resolved);
           return;
         }
 
@@ -180,9 +188,28 @@ export default function RoleplayPlayerPage() {
     goToStep('confirm-done');
   };
 
-  const handleFinalize = async () => {
+  const handleWorksheetComplete = () => {
     if (!session || !selectedName) return;
-    await markParticipantFinalized(session.code, selectedName);
+    const current = progress ?? loadPlayerProgress(session.code, selectedName);
+    const next = markWorksheetComplete(session.code, {
+      ...current,
+      mode: current.mode ?? 'online',
+    });
+    setProgress(next);
+    goToStep('upload-video');
+  };
+
+  const handleVideoFinalize = async (videoKey: string, videoContentType: string) => {
+    if (!session || !selectedName) return;
+    const result = await finalizeWithVideo(
+      session.code,
+      selectedName,
+      videoKey,
+      videoContentType,
+    );
+    if (!result) {
+      throw new Error('Could not finalize review.');
+    }
     completePlayerSessionLocally(session.code, selectedName);
     const updated = await loadPublishedSession(session.code);
     if (updated) setSession(updated);
@@ -233,7 +260,9 @@ export default function RoleplayPlayerPage() {
         <h1>
           {step === 'already-responded'
             ? 'Review complete'
-            : 'Complete your role review'}
+            : step === 'upload-video'
+              ? 'Upload your video'
+              : 'Complete your role review'}
         </h1>
         {identityConfirmed && selectedName && role && step !== 'already-responded' ? (
           <p className="roleplay-player-identity">
@@ -321,7 +350,7 @@ export default function RoleplayPlayerPage() {
             sessionCode={session.code}
             participantName={selectedName}
             roleId={participant.roleId}
-            onFinalize={handleFinalize}
+            onWorksheetComplete={handleWorksheetComplete}
           />
           <div className="play-actions">
             <button type="button" className="btn btn--ghost" onClick={() => goToStep('mode')}>
@@ -333,19 +362,38 @@ export default function RoleplayPlayerPage() {
 
       {step === 'confirm-done' ? (
         <motion.div className="play-panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>Step 4 — Finish</h2>
+          <h2>Step 4 — Worksheet done?</h2>
           <p className="page-subtitle">
-            When your printed worksheet is complete, tap finish below.
+            When your printed worksheet is complete, continue to upload your review video.
           </p>
           <div className="play-actions">
-            <button type="button" className="btn btn--accent btn--lg" onClick={handleFinalize}>
-              Finish review
+            <button
+              type="button"
+              className="btn btn--accent btn--lg"
+              onClick={handleWorksheetComplete}
+            >
+              Continue to video upload
             </button>
             <button type="button" className="btn btn--ghost" onClick={() => goToStep('mode')}>
               Back to options
             </button>
           </div>
         </motion.div>
+      ) : null}
+
+      {step === 'upload-video' && selectedName ? (
+        <UploadVideoStep
+          sessionCode={session.code}
+          participantName={selectedName}
+          progress={progress ?? loadPlayerProgress(session.code, selectedName)}
+          onProgressChange={setProgress}
+          onFinish={handleVideoFinalize}
+          onBack={() => {
+            const current =
+              progress ?? loadPlayerProgress(session.code, selectedName);
+            goToStep(current.mode === 'download' ? 'confirm-done' : 'online');
+          }}
+        />
       ) : null}
 
       {step === 'already-responded' ? (

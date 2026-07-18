@@ -80,6 +80,7 @@ Resources:
         LibraryBucketName: !GetAtt StorageStack.Outputs.LibraryBucketName
         LibraryPrefix: !GetAtt StorageStack.Outputs.LibraryPrefix
         LibraryCdnDomain: !GetAtt StorageStack.Outputs.LibraryCdnDomainName
+        ReviewsBucketName: !GetAtt StorageStack.Outputs.ReviewsBucketName
 
   FrontendStack:
     Type: AWS::CloudFormation::Stack

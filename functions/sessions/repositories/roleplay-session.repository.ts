@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, tableName } from '../../common/dynamo';
+import type { VideoReviewRecord } from '../services/reviews.service';
 
 const SESSIONS_TABLE = process.env.SESSIONS_TABLE ?? tableName('sessions');
 const TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -20,6 +21,7 @@ export interface RoleplaySessionRecord {
   coverUrl: string | null;
   participants: RoleplayParticipantRecord[];
   finalizedNames: string[];
+  videoReviews: Record<string, VideoReviewRecord>;
 }
 
 interface RoleplaySessionDbItem {
@@ -35,6 +37,7 @@ interface RoleplaySessionDbItem {
   coverUrl: string | null;
   participants: RoleplayParticipantRecord[];
   finalizedNames: string[];
+  videoReviews?: Record<string, VideoReviewRecord>;
   createdAt: string;
   updatedAt: string;
   status: 'review';
@@ -64,6 +67,7 @@ function toRecord(item: RoleplaySessionDbItem): RoleplaySessionRecord {
     coverUrl: item.coverUrl ?? null,
     participants: item.participants.map((p) => ({ ...p })),
     finalizedNames: [...item.finalizedNames],
+    videoReviews: item.videoReviews ? { ...item.videoReviews } : {},
   };
 }
 
@@ -123,6 +127,7 @@ export class RoleplaySessionRepository {
       coverUrl: input.coverUrl,
       participants: input.participants.map((p) => ({ ...p })),
       finalizedNames: existing?.finalizedNames ?? [],
+      videoReviews: existing?.videoReviews ?? {},
       createdAt,
       updatedAt: now,
       status: 'review',
@@ -142,6 +147,7 @@ export class RoleplaySessionRepository {
   async markParticipantFinalized(
     code: string,
     participantName: string,
+    videoReview?: VideoReviewRecord,
   ): Promise<RoleplaySessionRecord | null> {
     const existingResult = await docClient.send(
       new QueryCommand({
@@ -160,20 +166,26 @@ export class RoleplaySessionRepository {
     const finalizedNames = existing.finalizedNames.includes(participantName)
       ? existing.finalizedNames
       : [...existing.finalizedNames, participantName];
+    const videoReviews = { ...(existing.videoReviews ?? {}) };
+    if (videoReview) {
+      videoReviews[participantName] = videoReview;
+    }
     const updatedAt = new Date().toISOString();
 
     await docClient.send(
       new UpdateCommand({
         TableName: SESSIONS_TABLE,
         Key: { pk: existing.pk, sk: existing.sk },
-        UpdateExpression: 'SET finalizedNames = :names, updatedAt = :updatedAt',
+        UpdateExpression:
+          'SET finalizedNames = :names, videoReviews = :videos, updatedAt = :updatedAt',
         ExpressionAttributeValues: {
           ':names': finalizedNames,
+          ':videos': videoReviews,
           ':updatedAt': updatedAt,
         },
       }),
     );
 
-    return toRecord({ ...existing, finalizedNames, updatedAt });
+    return toRecord({ ...existing, finalizedNames, videoReviews, updatedAt });
   }
 }

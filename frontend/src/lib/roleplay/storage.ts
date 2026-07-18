@@ -6,6 +6,7 @@ export type PlayerStep =
   | 'mode'
   | 'online'
   | 'confirm-done'
+  | 'upload-video'
   | 'already-responded';
 
 export const CANVAS_SCHEMA_VERSION = 2;
@@ -16,6 +17,10 @@ export interface RoleplayPlayerProgress {
   participantName: string;
   mode: RoleplayMode | null;
   canvasPages: (string | null)[];
+  worksheetComplete: boolean;
+  videoUploaded: boolean;
+  videoKey: string | null;
+  videoContentType: string | null;
   finalized: boolean;
   updatedAt: string;
 }
@@ -55,6 +60,30 @@ function isCurrentSchema(raw: unknown): raw is RoleplayPlayerProgress {
   );
 }
 
+function migrateProgress(
+  parsed: RoleplayPlayerProgress,
+  participantName: string,
+): RoleplayPlayerProgress {
+  const record = parsed as RoleplayPlayerProgress & {
+    worksheetComplete?: boolean;
+    videoUploaded?: boolean;
+    videoKey?: string | null;
+    videoContentType?: string | null;
+  };
+
+  return {
+    ...record,
+    participantName,
+    worksheetComplete: record.worksheetComplete ?? false,
+    videoUploaded: record.videoUploaded ?? false,
+    videoKey: record.videoKey ?? null,
+    videoContentType: record.videoContentType ?? null,
+    canvasPages: emptyCanvasPages().map(
+      (_, index) => record.canvasPages[index] ?? null,
+    ),
+  };
+}
+
 export function getAlreadyRespondedCodes(): string[] {
   const raw = localStorage.getItem(ALREADY_RESPONDED_KEY);
   if (!raw) return [];
@@ -90,6 +119,10 @@ export function createEmptyProgress(participantName: string): RoleplayPlayerProg
     participantName,
     mode: null,
     canvasPages: emptyCanvasPages(),
+    worksheetComplete: false,
+    videoUploaded: false,
+    videoKey: null,
+    videoContentType: null,
     finalized: false,
     updatedAt: new Date().toISOString(),
   };
@@ -104,12 +137,7 @@ export function loadPlayerProgress(
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!isCurrentSchema(parsed)) return createEmptyProgress(participantName);
-    return {
-      ...parsed,
-      canvasPages: emptyCanvasPages().map(
-        (_, index) => parsed.canvasPages[index] ?? null,
-      ),
-    };
+    return migrateProgress(parsed, participantName);
   } catch {
     return createEmptyProgress(participantName);
   }
@@ -157,10 +185,36 @@ export function savePlayerUiState(code: string, state: RoleplayPlayerUiState): v
   localStorage.setItem(uiStateKey(normalizeCode(code)), JSON.stringify(state));
 }
 
+export function markWorksheetComplete(
+  code: string,
+  progress: RoleplayPlayerProgress,
+): RoleplayPlayerProgress {
+  const next = { ...progress, worksheetComplete: true };
+  savePlayerProgress(code, next);
+  return next;
+}
+
+export function markVideoUploaded(
+  code: string,
+  progress: RoleplayPlayerProgress,
+  videoKey: string,
+  videoContentType: string,
+): RoleplayPlayerProgress {
+  const next = {
+    ...progress,
+    videoUploaded: true,
+    videoKey,
+    videoContentType,
+  };
+  savePlayerProgress(code, next);
+  return next;
+}
+
 export function resolveStepFromProgress(
   progress: RoleplayPlayerProgress,
 ): PlayerStep {
   if (progress.finalized) return 'already-responded';
+  if (progress.worksheetComplete && !progress.videoUploaded) return 'upload-video';
   if (progress.mode === 'online') return 'online';
   if (progress.mode === 'download') return 'confirm-done';
   return 'mode';

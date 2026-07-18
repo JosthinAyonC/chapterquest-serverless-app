@@ -137,6 +137,24 @@ app.post('/sessions/by-code/:accessCode/finalize', (req, res) =>
     { accessCode: req.params.accessCode },
   ),
 );
+app.post('/sessions/by-code/:accessCode/videos/upload-url', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'POST /sessions/by-code/{accessCode}/videos/upload-url',
+    { accessCode: req.params.accessCode },
+  ),
+);
+app.get('/sessions/by-code/:accessCode/videos', (req, res) =>
+  invokeHandler(
+    req,
+    res,
+    sessionHandler,
+    'GET /sessions/by-code/{accessCode}/videos',
+    { accessCode: req.params.accessCode },
+  ),
+);
 
 async function verifyAwsAccess(): Promise<void> {
   const profile = process.env.AWS_PROFILE ?? '(default credential chain)';
