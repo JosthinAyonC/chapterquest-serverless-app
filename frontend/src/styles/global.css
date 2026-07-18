@@ -2662,57 +2662,308 @@ body.book-reader-open {
   font-size: 0.9rem;
 }
 
+.roleplay-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 1rem;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-solid);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.roleplay-editor-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.roleplay-editor-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.roleplay-editor-tool:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.roleplay-editor-tool:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.roleplay-editor-tool--active {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.08);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.roleplay-editor-tool--file {
+  cursor: pointer;
+}
+
+.roleplay-editor-toolbar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.roleplay-editor-toolbar-label input[type='color'] {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.roleplay-editor-toolbar-label select {
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
 .roleplay-editor-workspace {
   position: relative;
-  width: min(100%, 760px);
+  width: 100%;
+  max-width: 920px;
   margin-inline: auto;
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
+  background: #f6f2ea;
 }
 
-.roleplay-editor-page {
+.roleplay-editor-canvas-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  display: block;
+  height: min(calc(100dvh - 15rem), 78dvh);
+  min-height: 20rem;
+  padding: 0.35rem;
+  box-sizing: border-box;
 }
 
-.roleplay-editor-overlay {
+.roleplay-editor-canvas-wrap .canvas-container {
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.roleplay-editor-canvas-wrap canvas {
+  display: block;
+  touch-action: none;
+}
+
+@media (max-width: 768px) {
+  .roleplay-editor-toolbar {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 0.55rem;
+  }
+
+  .roleplay-editor-toolbar-group {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .roleplay-editor-tool {
+    min-height: 2.5rem;
+    min-width: 2.75rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  .roleplay-editor-workspace {
+    border-radius: var(--radius-sm);
+  }
+
+  .roleplay-editor-canvas-wrap {
+    height: calc(100dvh - 18.5rem);
+    min-height: 55dvh;
+    padding: 0.2rem;
+  }
+
+  .roleplay-editor-actions {
+    gap: 0.5rem;
+  }
+
+  .roleplay-editor-actions .btn {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 9rem;
+  }
+
+  .roleplay-editor-page-arrow {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .roleplay-editor-page-pill {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+.roleplay-editor-canvas-loading {
   position: absolute;
   inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: rgba(255, 252, 245, 0.82);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
-.roleplay-editor-field {
-  position: absolute;
-  display: block;
-}
-
-.roleplay-editor-field textarea {
-  width: 100%;
-  height: 100%;
-  resize: none;
-  border: 1px dashed rgba(128, 0, 0, 0.35);
-  border-radius: 6px;
-  background: rgba(255, 252, 245, 0.72);
-  padding: 0.35rem 0.5rem;
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  line-height: 1.35;
-}
-
-.roleplay-editor-field textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
+.roleplay-editor-page-footer {
+  padding: 0.75rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--color-border);
   background: rgba(255, 252, 245, 0.92);
 }
 
-.roleplay-editor-draw {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-  cursor: crosshair;
+.roleplay-editor-page-footer-note {
+  margin: 0 0 0.65rem;
+  text-align: center;
+  font-size: 0.84rem;
+  color: var(--color-secondary);
+}
+
+.roleplay-editor-page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.roleplay-editor-page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  color: var(--color-primary);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roleplay-editor-page-arrow:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.06);
+}
+
+.roleplay-editor-page-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.roleplay-editor-page-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.roleplay-editor-page-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.roleplay-editor-page-pill--active {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.08);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.roleplay-editor-page-pill--done {
+  border-color: rgba(74, 103, 65, 0.45);
+}
+
+.roleplay-editor-page-pill--pending {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+
+.roleplay-editor-page-pill-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.roleplay-editor-page-pill--done .roleplay-editor-page-pill-status {
+  color: #3d5c35;
+}
+
+.roleplay-editor-page-pill--pending .roleplay-editor-page-pill-status {
+  color: var(--color-secondary);
+}
+
+.roleplay-editor-page-counter {
+  margin: 0.55rem 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.roleplay-incomplete-modal-overlay {
+  z-index: 220;
+  backdrop-filter: blur(4px);
+}
+
+.roleplay-incomplete-modal {
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.roleplay-incomplete-modal-message {
+  margin: 0 0 1.25rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
 }
 
 .roleplay-editor-actions {
@@ -2953,14 +3204,12 @@ body.book-reader-open {
 @media print {
   .roleplay-editor-actions,
   .roleplay-editor-note,
+  .roleplay-editor-toolbar,
+  .roleplay-editor-page-footer,
+  .roleplay-incomplete-modal-overlay,
   .site-header,
   .site-footer,
   .page-header {
     display: none !important;
-  }
-
-  .roleplay-editor-field textarea {
-    border-style: solid;
-    background: transparent;
   }
 }

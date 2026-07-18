@@ -8,21 +8,14 @@ export type PlayerStep =
   | 'confirm-done'
   | 'already-responded';
 
-export interface RoleplayTextField {
-  id: string;
-  label: string;
-  value: string;
-  top: string;
-  left: string;
-  width: string;
-  height: string;
-}
+export const CANVAS_SCHEMA_VERSION = 2;
+export const PDF_PAGE_COUNT = 2;
 
 export interface RoleplayPlayerProgress {
+  schemaVersion: typeof CANVAS_SCHEMA_VERSION;
   participantName: string;
   mode: RoleplayMode | null;
-  textFields: RoleplayTextField[];
-  drawingDataUrl: string | null;
+  canvasPages: (string | null)[];
   finalized: boolean;
   updatedAt: string;
 }
@@ -49,19 +42,27 @@ function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
 }
 
-export const DEFAULT_TEXT_FIELDS: Omit<RoleplayTextField, 'value'>[] = [
-  { id: 'response-1', label: 'Response 1', top: '18%', left: '8%', width: '84%', height: '12%' },
-  { id: 'response-2', label: 'Response 2', top: '34%', left: '8%', width: '84%', height: '12%' },
-  { id: 'response-3', label: 'Response 3', top: '50%', left: '8%', width: '84%', height: '12%' },
-  { id: 'response-4', label: 'Response 4', top: '66%', left: '8%', width: '84%', height: '12%' },
-];
+function emptyCanvasPages(): (string | null)[] {
+  return Array.from({ length: PDF_PAGE_COUNT }, () => null);
+}
+
+function isCurrentSchema(raw: unknown): raw is RoleplayPlayerProgress {
+  if (!raw || typeof raw !== 'object') return false;
+  const record = raw as Record<string, unknown>;
+  return (
+    record.schemaVersion === CANVAS_SCHEMA_VERSION &&
+    Array.isArray(record.canvasPages)
+  );
+}
 
 export function getAlreadyRespondedCodes(): string[] {
   const raw = localStorage.getItem(ALREADY_RESPONDED_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed.map((code) => normalizeCode(String(code))) : [];
+    return Array.isArray(parsed)
+      ? parsed.map((code) => normalizeCode(String(code)))
+      : [];
   } catch {
     return [];
   }
@@ -85,10 +86,10 @@ export function clearPlayerSessionLocalData(code: string, participantName: strin
 
 export function createEmptyProgress(participantName: string): RoleplayPlayerProgress {
   return {
+    schemaVersion: CANVAS_SCHEMA_VERSION,
     participantName,
     mode: null,
-    textFields: DEFAULT_TEXT_FIELDS.map((field) => ({ ...field, value: '' })),
-    drawingDataUrl: null,
+    canvasPages: emptyCanvasPages(),
     finalized: false,
     updatedAt: new Date().toISOString(),
   };
@@ -101,9 +102,23 @@ export function loadPlayerProgress(
   const raw = localStorage.getItem(progressKey(normalizeCode(code), participantName));
   if (!raw) return createEmptyProgress(participantName);
   try {
-    return JSON.parse(raw) as RoleplayPlayerProgress;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isCurrentSchema(parsed)) return createEmptyProgress(participantName);
+    return {
+      ...parsed,
+      canvasPages: emptyCanvasPages().map(
+        (_, index) => parsed.canvasPages[index] ?? null,
+      ),
+    };
   } catch {
     return createEmptyProgress(participantName);
+  }
+}
+
+export class PlayerProgressStorageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlayerProgressStorageError';
   }
 }
 
@@ -113,12 +128,19 @@ export function savePlayerProgress(
 ): void {
   const next: RoleplayPlayerProgress = {
     ...progress,
+    schemaVersion: CANVAS_SCHEMA_VERSION,
     updatedAt: new Date().toISOString(),
   };
-  localStorage.setItem(
-    progressKey(normalizeCode(code), progress.participantName),
-    JSON.stringify(next),
-  );
+  try {
+    localStorage.setItem(
+      progressKey(normalizeCode(code), progress.participantName),
+      JSON.stringify(next),
+    );
+  } catch {
+    throw new PlayerProgressStorageError(
+      'Could not save your work. Try removing large images or clearing browser storage.',
+    );
+  }
 }
 
 export function loadPlayerUiState(code: string): RoleplayPlayerUiState | null {

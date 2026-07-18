@@ -61,7 +61,7 @@ export default function GuidePage() {
           rel="noopener noreferrer"
           className="guide-pdf-link"
         >
-          <span className="guide-pdf-label">Guía</span>
+          <span className="guide-pdf-label">GUIDE</span>
           <div className="guide-pdf-text">
             <h2>Teacher&apos;s methodological guide</h2>
             <p>
