@@ -1,21 +1,6 @@
-export type RoleId =
-  | 'facilitator'
-  | 'discussion-director'
-  | 'investigator'
-  | 'connector'
-  | 'illustrator'
-  | 'vocabulary-inspector';
+import type { Role, RoleId } from '../types/role';
 
-export interface Role {
-  id: RoleId;
-  nameEn: string;
-  nameEs: string;
-  wheelLabel: string;
-  description: string;
-  color: string;
-  icon: string;
-}
-
+/** Fixed product catalog — the six literature circle roles. */
 export const ROLES: Role[] = [
   {
     id: 'facilitator',

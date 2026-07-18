@@ -116,9 +116,15 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        <div className="malu-placeholder" style={{ marginTop: '2rem' }}>
-          Malu &amp; Danna — animated characters coming soon
-        </div>
+        <figure className="landing-banner">
+          <img
+            src="/banner.jpeg"
+            alt="Students reading together in a literary circle"
+            width={1200}
+            height={675}
+            loading="lazy"
+          />
+        </figure>
       </section>
 
       <section className="section-block" aria-labelledby="flow-title">

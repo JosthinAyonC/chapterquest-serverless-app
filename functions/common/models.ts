@@ -41,24 +41,6 @@ export interface ActivityParticipant {
   claimedAt?: string;
 }
 
-export interface ActivityReview {
-  pk: string;
-  sk: `REVIEW#${number}`;
-  slot: number;
-  displayName: string;
-  role: string;
-  content: string;
-  createdAt: string;
-}
-
-export interface ActivityConnection {
-  pk: string;
-  sk: `CONNECTION#${string}`;
-  connectionId: string;
-  sessionId: string;
-  connectedAt: string;
-}
-
 export interface LibraryObjectMeta {
   key: string;
   title?: string;
@@ -75,7 +57,3 @@ export type SessionStatus = ActivityStatus;
 export type SessionMetadata = ActivityMetadata;
 /** @deprecated Use ActivityParticipant */
 export type SessionParticipant = ActivityParticipant;
-/** @deprecated Use ActivityReview */
-export type SessionReview = ActivityReview;
-/** @deprecated Use ActivityConnection */
-export type SessionConnection = ActivityConnection;

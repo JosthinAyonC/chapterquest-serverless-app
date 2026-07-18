@@ -12,8 +12,7 @@ functions/
 ├── auth/             # Health check
 ├── users/            # Perfil invitado opcional (no login; no es Juguemos)
 ├── library/          # Catálogo S3 (list + preview URL)
-├── sessions/         # Actividades role play (API /sessions), timer, reviews
-├── ws/               # WebSocket connect / disconnect / message
+├── sessions/         # Role review sessions (publish, fetch, finalize)
 └── local/            # Servidor Express para desarrollo local
 ```
 
@@ -110,16 +109,8 @@ Copia [`functions/.env.example`](.env.example) a `functions/.env` antes de usar 
 |--------|------|-------------|
 | `GET` | `/health` | Health check |
 | `POST` | `/users/guest` | Perfil invitado opcional (cookie) — no login |
-
-### Planificados (ver ProductSpec)
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
 | `GET` | `/library` | Lista PDFs desde S3 + metadata |
-| `GET` | `/library/{key}/url` | Presigned GET para preview |
-| `POST` | `/sessions` | Crear **actividad** role play |
-| `PATCH` | `/sessions/{id}` | Timer, estado, cerrar actividad |
-| `POST` | `/sessions/{id}/reviews/claim` | Participante elige nombre |
-| `POST` | `/sessions/{id}/reviews` | Publicar review |
-| `GET` | `/sessions/{id}/export` | Reporte PDF/imagen |
-| WebSocket | `$connect`, `$default`, `$disconnect` | Sync timer y mural |
+| `GET` | `/library/{key}/preview-url` | Presigned GET para preview |
+| `POST` | `/sessions` | Publicar sesión de role review (host) |
+| `GET` | `/sessions/by-code/{accessCode}` | Obtener sesión por código |
+| `POST` | `/sessions/by-code/{accessCode}/finalize` | Marcar participante como finalizado |

@@ -80,6 +80,7 @@ Resources:
         LibraryBucketName: !GetAtt StorageStack.Outputs.LibraryBucketName
         LibraryPrefix: !GetAtt StorageStack.Outputs.LibraryPrefix
         LibraryCdnDomain: !GetAtt StorageStack.Outputs.LibraryCdnDomainName
+        ReviewsBucketName: !GetAtt StorageStack.Outputs.ReviewsBucketName
 
   FrontendStack:
     Type: AWS::CloudFormation::Stack
@@ -99,8 +100,6 @@ Resources:
 Outputs:
   ApiEndpoint:
     Value: !GetAtt ApiStack.Outputs.ApiEndpoint
-  WebSocketEndpoint:
-    Value: !GetAtt ApiStack.Outputs.WebSocketEndpoint
   FrontendUrl:
     Value: !GetAtt FrontendStack.Outputs.FrontendUrl
   FrontendBucketName:

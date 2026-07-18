@@ -25,6 +25,8 @@ declare module 'react-pageflip' {
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_APP_ENV?: 'prod' | 'dev' | 'local';
+  /** Local only — override reading timer to N seconds (e.g. "1") */
+  readonly VITE_DEV_TIMER_SECONDS?: string;
 }
 
 interface ImportMeta {

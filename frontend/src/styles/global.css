@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Tenor+Sans&display=swap');
 
 :root {
   --color-primary: #800000;
@@ -13,8 +13,9 @@
   --color-text: #3d2418;
   --color-text-muted: #6b4f3f;
   --color-on-primary: #fff8f0;
-  --font-sans: 'Outfit', system-ui, sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Tenor Sans', system-ui, sans-serif;
+  --font-display: 'Cinzel', Georgia, serif;
+  --font-subtitle: 'Cinzel', Georgia, serif;
   --radius-sm: 10px;
   --radius: 16px;
   --radius-lg: 24px;
@@ -140,22 +141,14 @@ img {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  color: var(--color-on-primary);
-  font-size: 0.85rem;
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 3.25rem;
+  object-fit: contain;
 }
 
 .brand-text span {
@@ -189,6 +182,9 @@ img {
 
 .header-cta {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .header-menu-btn {
@@ -357,6 +353,103 @@ body.nav-open {
   flex-shrink: 0;
 }
 
+/* Role review session bar — book linked to this review */
+.roleplay-session-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(128, 0, 0, 0.08),
+    rgba(184, 138, 44, 0.14)
+  );
+  border-bottom: 1px solid var(--color-border);
+}
+
+.roleplay-session-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 3.25rem;
+  padding-block: 0.55rem;
+}
+
+.roleplay-session-bar-book {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.roleplay-session-bar-cover {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.roleplay-session-bar-cover-img {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.roleplay-session-bar-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.roleplay-session-bar-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.roleplay-session-bar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.roleplay-session-bar-title--muted {
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.roleplay-session-bar-code {
+  flex-shrink: 0;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .roleplay-session-bar-inner {
+    flex-wrap: wrap;
+    min-height: auto;
+  }
+
+  .roleplay-session-bar-code {
+    margin-left: calc(2.25rem + 0.75rem);
+  }
+}
+
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--color-border);
@@ -409,7 +502,7 @@ body.nav-open {
 .page-header h1 {
   margin: 0 0 0.5rem;
   font-family: var(--font-display);
-  font-size: clamp(1.85rem, 4vw, 2.75rem);
+  font-size: clamp(1.65rem, 3.8vw, 2.45rem);
   color: var(--color-primary);
 }
 
@@ -417,16 +510,22 @@ body.nav-open {
   margin: 0;
   color: var(--color-text-muted);
   max-width: 62ch;
-  font-size: 1.05rem;
+  font-family: var(--font-subtitle);
+  font-size: 1.08rem;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
 }
 
 .eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 0.75rem;
+  font-family: var(--font-subtitle);
+  font-size: 0.8rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   color: var(--color-accent);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
 }
 
 /* Buttons */
@@ -505,7 +604,7 @@ body.nav-open {
 
 .landing-hero h1 {
   font-family: var(--font-display);
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 4.5vw, 3.15rem);
   line-height: 1.1;
   margin: 0 0 1rem;
   color: var(--color-primary);
@@ -587,7 +686,7 @@ body.nav-open {
 
 .section-block h2 {
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
   color: var(--color-secondary);
   margin: 0 0 1rem;
 }
@@ -665,6 +764,30 @@ body.nav-open {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.25rem;
+  align-items: stretch;
+}
+
+.library-grid-item {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  animation: library-card-in 0.45s ease both;
+}
+
+@keyframes library-card-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-grid-item {
+    animation: none;
+  }
 }
 
 .library-page {
@@ -703,14 +826,15 @@ body.nav-open {
 
 .book-card {
   perspective: 1000px;
-  min-height: 320px;
+  width: 100%;
+  height: 400px;
+  flex: 1;
 }
 
 .book-card-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 320px;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   transition: transform 0.5s ease;
@@ -741,8 +865,8 @@ body.nav-open {
 }
 
 .book-cover {
-  flex: 1;
-  min-height: 180px;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -770,6 +894,10 @@ body.nav-open {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .book-cover p,
@@ -777,9 +905,14 @@ body.nav-open {
   margin: 0.25rem 0 0;
   opacity: 0.9;
   font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .book-meta {
+  flex-shrink: 0;
   padding: 1rem 1.25rem;
   background: var(--color-surface-solid);
 }
@@ -811,26 +944,110 @@ body.nav-open {
   background: var(--color-surface-solid);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  overflow: hidden;
 }
 
 .book-card-back h3 {
-  margin: 0 0 0.35rem;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.1rem;
   color: var(--color-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .book-card-back .book-card-author {
-  margin: 0 0 0.85rem;
+  margin: 0;
   font-size: 0.88rem;
   color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
-.book-card-back p {
+.book-card-summary-block {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.book-card-summary-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.book-card-summary-block--overflow .book-card-summary-viewport::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.25rem;
+  background: linear-gradient(to bottom, transparent, var(--color-surface-solid));
+  pointer-events: none;
+}
+
+.book-card-summary {
   margin: 0;
   color: var(--color-text-muted);
   font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.book-card-summary-block--overflow .book-card:hover .book-card-summary,
+.book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+  animation: book-summary-autoscroll 16s ease-in-out infinite;
+}
+
+@keyframes book-summary-autoscroll {
+  0%,
+  12% {
+    transform: translateY(0);
+  }
+  45%,
+  55% {
+    transform: translateY(var(--scroll-distance, 0));
+  }
+  88%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.book-card-summary-toggle {
+  display: none;
+  align-self: flex-start;
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.book-card-summary-toggle:hover {
+  color: var(--color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-card-summary-block--overflow .book-card:hover .book-card-summary,
+  .book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+    animation: none;
+  }
+
+  .book-card-summary-block--overflow .book-card-summary-viewport {
+    overflow-y: auto;
+  }
 }
 
 /* Role cards */
@@ -902,6 +1119,82 @@ body.nav-open {
   text-align: center;
 }
 
+.guide-pdf {
+  margin-top: 2rem;
+}
+
+.guide-pdf-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guide-pdf-link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.guide-pdf-label {
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 138, 44, 0.18);
+  color: var(--color-secondary);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-pdf-text {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.guide-pdf-text h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--color-primary);
+}
+
+.guide-pdf-text p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.guide-pdf-action {
+  flex-shrink: 0;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .guide-pdf-link {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .guide-pdf-action {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
 /* Play page */
 .play-layout {
   display: grid;
@@ -921,7 +1214,7 @@ body.nav-open {
 .play-panel h2 {
   margin: 0 0 1rem;
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   color: var(--color-secondary);
 }
 
@@ -1023,7 +1316,7 @@ body.nav-open {
   margin: 0 0 0.35rem;
   font-family: var(--font-display);
   color: var(--color-primary);
-  font-size: 1.65rem;
+  font-size: 1.45rem;
 }
 
 .roulette-modal-subtitle {
@@ -1828,110 +2121,20 @@ body.book-reader-open {
   justify-content: center;
 }
 
-/* Review wall */
-.review-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.review-sidebar {
-  position: sticky;
-  top: calc(var(--header-height) + 1rem);
-}
-
-.review-form {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.review-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-  align-content: start;
-  min-height: 400px;
-  padding: 1rem;
+.landing-banner {
+  margin-top: 2rem;
+  margin-bottom: 0;
   border-radius: var(--radius-lg);
-  background: rgba(255, 252, 245, 0.5);
-  border: 2px dashed var(--color-border);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
 }
 
-.review-card {
-  padding: 1rem;
-  border-radius: var(--radius);
-  background: var(--color-surface-solid);
-  border-top: 4px solid var(--role-color, var(--color-accent));
-  box-shadow: var(--shadow-sm);
-}
-
-.review-card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin-bottom: 0.65rem;
-}
-
-.review-card-name {
-  font-weight: 700;
-  color: var(--color-secondary);
-}
-
-.review-card-role {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-accent);
-}
-
-.review-card-message {
-  margin: 0;
-  font-size: 0.92rem;
-  color: var(--color-text-muted);
-}
-
-.review-live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(128, 0, 0, 0.1);
-  color: var(--color-primary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.review-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  animation: pulse 1.5s ease infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
-.malu-placeholder {
-  display: grid;
-  place-items: center;
-  min-height: 200px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(128, 0, 0, 0.08), rgba(184, 138, 44, 0.15));
-  border: 2px dashed var(--color-border);
-  color: var(--color-text-muted);
-  font-style: italic;
-  text-align: center;
-  padding: 2rem;
+.landing-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
 }
 
 /* Page transitions wrapper */
@@ -1945,13 +2148,11 @@ body.book-reader-open {
     grid-template-columns: 1fr;
   }
 
-  .play-layout,
-  .review-layout {
+  .play-layout {
     grid-template-columns: 1fr;
   }
 
-  .roster-panel,
-  .review-sidebar {
+  .roster-panel {
     position: static;
   }
 
@@ -1973,14 +2174,8 @@ body.book-reader-open {
     gap: 0.75rem;
   }
 
-  .brand {
-    font-size: 1.15rem;
-  }
-
-  .brand-mark {
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.75rem;
+  .brand-logo {
+    height: 2.75rem;
   }
 
   .brand-group {
@@ -2017,6 +2212,11 @@ body.book-reader-open {
     box-shadow: var(--shadow);
   }
 
+  .book-card {
+    height: auto;
+    min-height: 0;
+  }
+
   .book-card:hover .book-card-inner,
   .book-card:focus-within .book-card-inner {
     transform: none;
@@ -2028,6 +2228,32 @@ body.book-reader-open {
     backface-visibility: visible;
     margin-top: 0.5rem;
     border-radius: var(--radius);
+    min-height: 9.5rem;
+  }
+
+  .book-card-summary-block--overflow .book-card:hover .book-card-summary,
+  .book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+    animation: none;
+    transform: none;
+  }
+
+  .book-card-summary-viewport {
+    flex: none;
+    max-height: 5.25rem;
+  }
+
+  .book-card-summary-block--expanded .book-card-summary-viewport {
+    max-height: 9.5rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .book-card-summary-block--expanded .book-card-summary-viewport::after {
+    opacity: 0;
+  }
+
+  .book-card-summary-toggle {
+    display: inline-flex;
   }
 
   .book-card-inner {
@@ -2123,4 +2349,1292 @@ body.book-reader-open {
     margin: auto;
     padding: 1rem;
   }
+}
+
+/* Page loader */
+.page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 2.5rem 1.5rem;
+  min-height: 220px;
+}
+
+.page-loader--compact {
+  min-height: 160px;
+  padding: 1.5rem 1rem;
+  gap: 0.85rem;
+}
+
+.page-loader-book {
+  position: relative;
+  width: 72px;
+  height: 52px;
+  perspective: 320px;
+}
+
+.page-loader--compact .page-loader-book {
+  width: 56px;
+  height: 40px;
+}
+
+.page-loader-spine {
+  position: absolute;
+  inset: 0 auto 0 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  background: linear-gradient(
+    180deg,
+    var(--color-secondary),
+    var(--color-primary)
+  );
+  border-radius: 2px;
+  z-index: 2;
+}
+
+.page-loader-page {
+  position: absolute;
+  inset: 0;
+  width: 50%;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transform-origin: left center;
+}
+
+.page-loader-page--left {
+  left: 0;
+  border-radius: 4px 0 0 4px;
+  animation: page-loader-idle-left 2.4s ease-in-out infinite;
+}
+
+.page-loader-page--right {
+  left: 50%;
+  transform-origin: left center;
+  border-radius: 0 4px 4px 0;
+  animation: page-loader-flip 2.4s ease-in-out infinite;
+}
+
+.page-loader-label {
+  margin: 0;
+  font-family: var(--font-subtitle);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+}
+
+.page-loader--compact .page-loader-label {
+  font-size: 0.92rem;
+}
+
+@keyframes page-loader-flip {
+  0%,
+  18% {
+    transform: rotateY(0deg);
+  }
+  45%,
+  55% {
+    transform: rotateY(-165deg);
+  }
+  82%,
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes page-loader-idle-left {
+  0%,
+  100% {
+    box-shadow: var(--shadow-sm);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(128, 0, 0, 0.12);
+  }
+}
+
+/* Start reading modal */
+.start-reading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 460;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(61, 36, 24, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.start-reading-card {
+  width: min(100%, 420px);
+  padding: 2rem 1.75rem;
+  text-align: center;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.start-reading-card h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3.8vw, 1.85rem);
+  color: var(--color-primary);
+}
+
+.start-reading-lead {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Roleplay review */
+.roleplay-host-page {
+  max-width: 1120px;
+}
+
+.roleplay-qr-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100%;
+  padding: 2rem 1.5rem;
+}
+
+.host-review-book-spread .roleplay-qr-panel {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.roleplay-join-code {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  letter-spacing: 0.2em;
+  color: var(--color-primary);
+}
+
+.roleplay-qr-frame {
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background: #fff9ef;
+  border: 1px solid var(--color-border);
+}
+
+.roleplay-qr-frame img {
+  width: 100%;
+  height: auto;
+}
+
+.roleplay-link-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.roleplay-link-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-soft);
+  font-size: 0.85rem;
+}
+
+.roleplay-host-guide h2,
+.roleplay-host-guide h3 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  color: var(--color-secondary);
+}
+
+.roleplay-host-guide h3 {
+  margin-top: 1.25rem;
+  font-size: 1.1rem;
+}
+
+.roleplay-host-intro {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.roleplay-host-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.roleplay-host-steps li + li {
+  margin-top: 0.45rem;
+}
+
+.roleplay-host-progress {
+  margin: 1.25rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.roleplay-name-grid,
+.roleplay-mode-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.roleplay-name-btn {
+  justify-content: flex-start;
+}
+
+.roleplay-mode-btn {
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.35rem;
+}
+
+.roleplay-mode-btn span {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.roleplay-role-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+}
+
+.roleplay-role-icon {
+  font-size: 2rem;
+}
+
+.roleplay-role-name {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+.roleplay-role-desc {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.roleplay-editor-note {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 138, 44, 0.12);
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+}
+
+.roleplay-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 1rem;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-solid);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.roleplay-editor-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.roleplay-editor-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.roleplay-editor-tool:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.roleplay-editor-tool:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.roleplay-editor-tool--active {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.08);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.roleplay-editor-tool--file {
+  cursor: pointer;
+}
+
+.roleplay-editor-toolbar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.roleplay-editor-toolbar-label input[type='color'] {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.roleplay-editor-toolbar-label select {
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
+.roleplay-editor-workspace {
+  position: relative;
+  width: 100%;
+  max-width: 920px;
+  margin-inline: auto;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  background: #f6f2ea;
+}
+
+.roleplay-editor-canvas-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: min(calc(100dvh - 15rem), 78dvh);
+  min-height: 20rem;
+  padding: 0.35rem;
+  box-sizing: border-box;
+}
+
+.roleplay-editor-canvas-wrap .canvas-container {
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.roleplay-editor-canvas-wrap canvas {
+  display: block;
+  touch-action: none;
+}
+
+@media (max-width: 768px) {
+  .roleplay-editor-toolbar {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 0.55rem;
+  }
+
+  .roleplay-editor-toolbar-group {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .roleplay-editor-tool {
+    min-height: 2.5rem;
+    min-width: 2.75rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  .roleplay-editor-workspace {
+    border-radius: var(--radius-sm);
+  }
+
+  .roleplay-editor-canvas-wrap {
+    height: calc(100dvh - 18.5rem);
+    min-height: 55dvh;
+    padding: 0.2rem;
+  }
+
+  .roleplay-editor-actions {
+    gap: 0.5rem;
+  }
+
+  .roleplay-editor-actions .btn {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 9rem;
+  }
+
+  .roleplay-editor-page-arrow {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .roleplay-editor-page-pill {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+.roleplay-editor-canvas-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: rgba(255, 252, 245, 0.82);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.roleplay-editor-page-footer {
+  padding: 0.75rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--color-border);
+  background: rgba(255, 252, 245, 0.92);
+}
+
+.roleplay-editor-page-footer-note {
+  margin: 0 0 0.65rem;
+  text-align: center;
+  font-size: 0.84rem;
+  color: var(--color-secondary);
+}
+
+.roleplay-editor-page-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.roleplay-editor-page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  color: var(--color-primary);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.roleplay-editor-page-arrow:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.06);
+}
+
+.roleplay-editor-page-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.roleplay-editor-page-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.roleplay-editor-page-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.roleplay-editor-page-pill--active {
+  border-color: var(--color-primary);
+  background: rgba(128, 0, 0, 0.08);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.roleplay-editor-page-pill--done {
+  border-color: rgba(74, 103, 65, 0.45);
+}
+
+.roleplay-editor-page-pill--pending {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+
+.roleplay-editor-page-pill-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.roleplay-editor-page-pill--done .roleplay-editor-page-pill-status {
+  color: #3d5c35;
+}
+
+.roleplay-editor-page-pill--pending .roleplay-editor-page-pill-status {
+  color: var(--color-secondary);
+}
+
+.roleplay-editor-page-counter {
+  margin: 0.55rem 0 0;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.roleplay-incomplete-modal-overlay {
+  z-index: 220;
+  backdrop-filter: blur(4px);
+}
+
+.roleplay-incomplete-modal {
+  width: min(100%, 440px);
+  text-align: center;
+}
+
+.roleplay-incomplete-modal-message {
+  margin: 0 0 1.25rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.roleplay-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.roleplay-thanks-role {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  color: var(--color-primary);
+}
+
+.roleplay-player-identity {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+}
+
+.roleplay-confirm-card {
+  max-width: 440px;
+  text-align: left;
+}
+
+.roleplay-confirm-lead {
+  margin: 0 0 1.25rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.roleplay-name-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .host-review-book-spread {
+    grid-template-columns: 1fr;
+  }
+
+  .host-review-book-spread::after {
+    display: none;
+  }
+
+  .host-review-book-leaf--left {
+    border-right: none;
+    border-bottom: 1px solid rgba(61, 36, 24, 0.1);
+  }
+
+  .host-review-book-shell,
+  .host-review-book-spread,
+  .host-review-book-full {
+    min-height: auto;
+  }
+}
+
+/* My reviews modal */
+.my-reviews-modal-overlay {
+  align-items: flex-start;
+  padding-top: 5vh;
+}
+
+.my-reviews-modal {
+  width: min(100%, 42rem);
+  max-height: min(85vh, 720px);
+  overflow: auto;
+}
+
+.my-reviews-modal-header h2 {
+  margin-bottom: 0.35rem;
+}
+
+.my-reviews-modal-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.my-reviews-modal-loading,
+.my-reviews-modal-empty {
+  margin: 1.25rem 0;
+  color: var(--color-text-muted);
+}
+
+.my-review-card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface-solid);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.my-review-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.my-review-card-roster {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(99, 58, 44, 0.92);
+  color: var(--color-on-primary);
+  overflow-x: auto;
+}
+
+.my-review-card-roster-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.my-review-card-roster-chips {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+}
+
+.my-review-card-roster-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.my-review-card-roster-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.my-review-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  background: linear-gradient(
+    90deg,
+    rgba(128, 0, 0, 0.06),
+    rgba(184, 138, 44, 0.12)
+  );
+}
+
+.my-review-card-book {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.my-review-card-cover-img,
+.my-review-card-cover-fallback {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.my-review-card-cover-img {
+  object-fit: cover;
+}
+
+.my-review-card-cover-fallback {
+  background: var(--color-accent);
+}
+
+.my-review-card-book-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.my-review-card-book-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.my-review-card-book-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.my-review-card-date {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.my-review-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.my-review-card-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.my-review-card-status--in_progress {
+  background: rgba(184, 138, 44, 0.2);
+  color: #7a5a12;
+}
+
+.my-review-card-status--completed {
+  background: rgba(74, 103, 65, 0.18);
+  color: #3d5c35;
+}
+
+.my-review-card-code {
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+}
+
+@media print {
+  .roleplay-editor-actions,
+  .roleplay-editor-note,
+  .roleplay-editor-toolbar,
+  .roleplay-editor-page-footer,
+  .roleplay-incomplete-modal-overlay,
+  .roleplay-video-required-modal-overlay,
+  .cookie-consent-banner,
+  .site-header,
+  .site-footer,
+  .page-header {
+    display: none !important;
+  }
+}
+
+/* --- Tabs --- */
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.35rem;
+}
+
+.tabs-trigger {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.tabs-trigger--active {
+  color: var(--color-primary);
+  background: rgba(74, 103, 65, 0.1);
+  border-color: rgba(74, 103, 65, 0.25);
+}
+
+.tabs-panel {
+  min-width: 0;
+}
+
+/* --- Host review book --- */
+
+.host-review-book {
+  width: 100%;
+  perspective: 1600px;
+}
+
+.host-review-book-tabs {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: -1px;
+}
+
+.host-review-book-tab {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: rgba(255, 249, 239, 0.72);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem 0.7rem;
+  cursor: pointer;
+  transform: translateY(1px);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.host-review-book-tab--active {
+  background: var(--color-surface-solid);
+  color: var(--color-primary);
+  transform: translateY(0);
+  box-shadow: 0 -2px 10px rgba(61, 36, 24, 0.08);
+}
+
+.host-review-book-shell {
+  position: relative;
+  min-height: 540px;
+}
+
+.host-review-book-page {
+  transform-origin: center center;
+  backface-visibility: hidden;
+}
+
+.host-review-book-spread {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 540px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-surface-solid);
+  overflow: hidden;
+  position: relative;
+}
+
+.host-review-book-spread::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(61, 36, 24, 0.04),
+    rgba(61, 36, 24, 0.16),
+    rgba(61, 36, 24, 0.04)
+  );
+  box-shadow:
+    inset 1px 0 rgba(255, 255, 255, 0.35),
+    inset -1px 0 rgba(61, 36, 24, 0.12);
+}
+
+.host-review-book-leaf {
+  min-width: 0;
+  padding: 1.75rem 1.5rem;
+}
+
+.host-review-book-leaf--left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(61, 36, 24, 0.1);
+  background:
+    linear-gradient(90deg, rgba(61, 36, 24, 0.03), transparent 2rem),
+    var(--color-surface-solid);
+}
+
+.host-review-book-leaf--right {
+  background:
+    linear-gradient(270deg, rgba(61, 36, 24, 0.04), transparent 2rem),
+    var(--color-surface);
+}
+
+.host-review-book-leaf--right h3 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  color: var(--color-secondary);
+}
+
+.host-review-book-leaf--right h3:not(:first-child) {
+  margin-top: 1.25rem;
+}
+
+.host-review-book-full {
+  min-height: 540px;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-surface);
+}
+
+.host-review-book-full .video-reviews-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 1.5rem;
+}
+
+/* --- Upload video step --- */
+
+.upload-video-step {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.upload-video-review-info {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(74, 103, 65, 0.08);
+  border: 1px solid rgba(74, 103, 65, 0.15);
+}
+
+.upload-video-review-info h3 {
+  margin: 0 0 0.35rem;
+}
+
+.upload-video-dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.upload-video-dropzone--active,
+.upload-video-dropzone:hover {
+  border-color: var(--color-primary);
+  background: rgba(74, 103, 65, 0.06);
+}
+
+.upload-video-dropzone--done {
+  border-color: rgba(74, 103, 65, 0.45);
+  background: rgba(74, 103, 65, 0.08);
+}
+
+.upload-video-input {
+  display: none;
+}
+
+.upload-video-dropzone-text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.upload-video-formats {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+}
+
+.upload-video-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.upload-video-progress-bar {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--color-surface-solid);
+  overflow: hidden;
+}
+
+.upload-video-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.2s ease;
+}
+
+.upload-video-actions {
+  flex-wrap: wrap;
+}
+
+/* --- Video reviews host panel --- */
+
+.video-reviews-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.video-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.video-review-card-header h3 {
+  margin: 0;
+}
+
+.video-review-card-role {
+  margin: 0.15rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.review-video-player {
+  width: 100%;
+}
+
+.review-video-player-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #111;
+  color: #fff;
+}
+
+.review-video-player-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0d0d0d;
+  overflow: hidden;
+}
+
+.review-video-player-viewport media-outlet,
+.review-video-player-viewport [data-media-type='video'] {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.review-video-player-root video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #0d0d0d;
+}
+
+.review-video-player-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem 0.75rem;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.review-video-player-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-video-player-row--bottom {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.review-video-player-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.review-video-time {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  min-width: 6.5rem;
+}
+
+.review-video-time-slider {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-video-volume-slider {
+  width: 5.5rem;
+}
+
+.review-video-control-btn {
+  color: #fff;
+}
+
+/* --- Cookie consent --- */
+
+.cookie-consent-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  padding: 1rem;
+  background: rgba(28, 24, 20, 0.96);
+  color: #fff;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cookie-consent-inner {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cookie-consent-text {
+  margin: 0;
+  flex: 1 1 18rem;
+  line-height: 1.5;
+}
+
+.cookie-consent-link {
+  color: #f0d9a8;
+}
+
+.cookie-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* --- Legal page --- */
+
+.legal-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.legal-section h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.legal-section p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.roleplay-video-required-modal-message {
+  margin: 0;
+  line-height: 1.55;
 }

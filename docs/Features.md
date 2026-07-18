@@ -102,14 +102,17 @@ Checklist de funcionalidades ordenadas por área de producto. Cada ítem enlaza 
 
 | ID | Feature | Descripción breve | SDD | Listo |
 |----|---------|-------------------|-----|-------|
-| F-70 | Pantalla host review | Estilo Kahoot: código grande + QR + copiar enlace | [§7](./ProductSpec.md#7-flujo-de-review-mural) | [ ] |
-| F-71 | Entrada por QR / enlace | Ruta `/review/:code` — resolver actividad | [§4.6](./ProductSpec.md#46-entrada-a-review-participantes) · [§7](./ProductSpec.md#7-flujo-de-review-mural) | [ ] |
+| F-70 | Pantalla host review | Estilo Kahoot: código + QR + copiar enlace + guía role review | [§7](./ProductSpec.md#72-pantalla-host-proyector--tablet-del-facilitador) | [x] |
+| F-71 | Entrada por QR / enlace | Ruta `/roleplay/:code` — wizard jugador | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) | [x] |
 | F-72 | Botón «Tengo que hacer un review» | Entrada global discreta + input código | [§4.6](./ProductSpec.md#46-entrada-a-review-participantes) | [ ] |
-| F-73 | Claim participante | Elegir 1 de 6 nombres; bloqueo para otros | [§6.2](./ProductSpec.md#62-identificación-de-participantes-sin-login) · R7 | [x] |
-| F-74 | Mostrar rol al participante | Tras elegir nombre, ver su rol antes de escribir | [§7](./ProductSpec.md#7-flujo-de-review-mural) · [§2.2](./ProductSpec.md#22-visibilidad-nombre--rol-requisito-ux) | [x] |
-| F-75 | Formulario review | Texto/tarjeta; guardar con etiqueta **nombre · rol** | [§7](./ProductSpec.md#7-flujo-de-review-mural) · R8 | [x] |
-| F-76 | Mural Padlet-like | Host ve reviews en tiempo real | [§7](./ProductSpec.md#7-flujo-de-review-mural) | [x] |
-| F-77 | API review | `POST .../reviews/claim`, `POST .../reviews`, `GET .../by-code` | [§9.2](./ProductSpec.md#92-planificado--persiste-la-actividad-no-el-usuario) | [ ] |
+| F-73 | Claim participante | Elegir 1 de 6 nombres | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) · R7 | [x] |
+| F-74 | Mostrar rol al participante | Tras elegir nombre, ver rol + plantilla PDF | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) | [x] |
+| F-75 | Modo en línea vs descarga | Overlay PDF + localStorage; o descarga plantilla | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) · R8b | [x] |
+| F-75b | Editor Illustrator | Lienzo de dibujo sobre plantilla | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) | [x] |
+| F-75c | Finalizar + gracias | Botón Finish + mensaje entregar a maestra | [§7.3](./ProductSpec.md#73-vista-jugador-roleplay) · R8d | [x] |
+| F-76 | Mural Padlet-like | **Legacy** — `/review` prototipo | [§7.6](./ProductSpec.md#76-legacy--mural-padlet-review) | [x] |
+| F-77 | API review / by-code | DynamoDB sessions + publish/finalize by code | [§7.4](./ProductSpec.md#74-persistencia-y-límites-actuales) | [x] |
+| F-77b | Bloqueo 6/6 finalizados | Solo lectura + descarga plantilla guardada | [§7.5](./ProductSpec.md#75-futuro-no-funcional-en-mvp) | [ ] |
 | F-78 | Cerrar actividad | Host cierra; libera para nueva actividad | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R9 | [ ] |
 | F-79 | Export reporte | PDF o captura con nombre, rol y review por participante | [§6](./ProductSpec.md#6-flujo-de-actividad-role-play) · R10 · [§7](./ProductSpec.md#7-flujo-de-review-mural) | [ ] |
 

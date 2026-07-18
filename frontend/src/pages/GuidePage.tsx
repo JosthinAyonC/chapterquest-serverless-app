@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ROLES } from '../mocks/roles';
+import { ROLES } from '../data/roles';
 import RoleCard from '../components/RoleCard';
 import { fadeUp, staggerContainer } from '../theme/motion';
 
@@ -46,6 +46,31 @@ export default function GuidePage() {
         {ROLES.map((role, index) => (
           <RoleCard key={role.id} role={role} index={index} />
         ))}
+      </motion.div>
+
+      <motion.div
+        className="guide-pdf"
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        <a
+          href="/guide/TEACHERS_GUIDE.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="guide-pdf-link"
+        >
+          <span className="guide-pdf-label">GUIDE</span>
+          <div className="guide-pdf-text">
+            <h2>Teacher&apos;s methodological guide</h2>
+            <p>
+              Step-by-step instructions for running literary circles in the
+              classroom — roles, timing, and review activities.
+            </p>
+          </div>
+          <span className="guide-pdf-action">Open PDF</span>
+        </a>
       </motion.div>
 
       <motion.div

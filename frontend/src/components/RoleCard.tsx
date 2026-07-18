@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { Role } from '../mocks/roles';
+import type { Role } from '../types/role';
 import { scaleHover } from '../theme/motion';
 
 interface RoleCardProps {

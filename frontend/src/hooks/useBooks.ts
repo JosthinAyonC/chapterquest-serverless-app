@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ApiError, getLibrary } from '../lib/api';
 import { mapApiBook } from '../lib/books';
-import type { Book } from '../mocks/books';
+import type { Book } from '../types/book';
 
 export function useBooks() {
   const [books, setBooks] = useState<Book[]>([]);

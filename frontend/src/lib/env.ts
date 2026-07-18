@@ -23,3 +23,12 @@ export function getEnvironmentBadgeLabel(
       return 'Local dev';
   }
 }
+
+/** Override reading timer to N seconds — only when VITE_APP_ENV=local. */
+export function getDevTimerSeconds(): number | null {
+  if (getAppEnvironment() !== 'local') return null;
+  const raw = import.meta.env.VITE_DEV_TIMER_SECONDS;
+  if (!raw) return null;
+  const seconds = Number(raw);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : null;
+}

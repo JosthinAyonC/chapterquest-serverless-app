@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ChapterQuest API — HTTP API, WebSocket API, and Lambda functions
+Description: ChapterQuest API — HTTP API and Lambda functions
 
 Parameters:
   Env:
@@ -19,15 +19,6 @@ Parameters:
   SessionsLambdaS3Key:
     Type: String
     Default: sessions/handlers/session.zip
-  WsConnectLambdaS3Key:
-    Type: String
-    Default: ws/handlers/connect.zip
-  WsDisconnectLambdaS3Key:
-    Type: String
-    Default: ws/handlers/disconnect.zip
-  WsMessageLambdaS3Key:
-    Type: String
-    Default: ws/handlers/message.zip
   EnableCustomDomain:
     Type: String
     AllowedValues: ['true', 'false']
@@ -51,6 +42,9 @@ Parameters:
     Type: String
     Default: ''
     Description: CloudFront domain for library PDFs and covers (no protocol)
+  ReviewsBucketName:
+    Type: String
+    Description: Private S3 bucket for participant review videos
 
 Conditions:
   UseCustomDomain: !Equals [!Ref EnableCustomDomain, 'true']
@@ -210,6 +204,16 @@ Resources:
                 Resource:
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}/index/*
+        - PolicyName: S3ReviewsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:HeadObject
+                Resource: !Sub arn:aws:s3:::${ReviewsBucketName}/*
 
   SessionsFunction:
     Type: AWS::Lambda::Function
@@ -226,95 +230,11 @@ Resources:
           SESSIONS_TABLE: !Ref SessionsTableName
           LIBRARY_BUCKET: !Ref LibraryBucketName
           LIBRARY_PREFIX: !Ref LibraryPrefix
+          REVIEWS_BUCKET: !Ref ReviewsBucketName
+          REVIEWS_MAX_BYTES: '209715200'
       Code:
         S3Bucket: !Ref LambdaArtifactsBucket
         S3Key: !Sub ${Env}/lambdas/${SessionsLambdaS3Key}
-
-  # --- WebSocket Lambdas ---
-
-  WsExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub ${Env}-role-function-ws
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: WsSessionSync
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                  - dynamodb:DeleteItem
-                  - dynamodb:Query
-                Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SessionsTableName}/index/*
-              - Effect: Allow
-                Action: execute-api:ManageConnections
-                Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*
-
-  WsConnectFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub ${Env}-function-ws-connect
-      Runtime: nodejs22.x
-      Handler: ws/handlers/connect.handler
-      Role: !GetAtt WsExecutionRole.Arn
-      Timeout: 10
-      MemorySize: 128
-      Environment:
-        Variables:
-          ENV: !Ref Env
-          SESSIONS_TABLE: !Ref SessionsTableName
-      Code:
-        S3Bucket: !Ref LambdaArtifactsBucket
-        S3Key: !Sub ${Env}/lambdas/${WsConnectLambdaS3Key}
-
-  WsDisconnectFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub ${Env}-function-ws-disconnect
-      Runtime: nodejs22.x
-      Handler: ws/handlers/disconnect.handler
-      Role: !GetAtt WsExecutionRole.Arn
-      Timeout: 10
-      MemorySize: 128
-      Environment:
-        Variables:
-          ENV: !Ref Env
-          SESSIONS_TABLE: !Ref SessionsTableName
-      Code:
-        S3Bucket: !Ref LambdaArtifactsBucket
-        S3Key: !Sub ${Env}/lambdas/${WsDisconnectLambdaS3Key}
-
-  WsMessageFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub ${Env}-function-ws-message
-      Runtime: nodejs22.x
-      Handler: ws/handlers/message.handler
-      Role: !GetAtt WsExecutionRole.Arn
-      Timeout: 10
-      MemorySize: 128
-      Environment:
-        Variables:
-          ENV: !Ref Env
-          SESSIONS_TABLE: !Ref SessionsTableName
-          WEBSOCKET_API_ENDPOINT: !Sub https://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${Env}
-      Code:
-        S3Bucket: !Ref LambdaArtifactsBucket
-        S3Key: !Sub ${Env}/lambdas/${WsMessageLambdaS3Key}
 
   # --- HTTP API ---
 
@@ -395,48 +315,6 @@ Resources:
       RouteKey: POST /sessions
       Target: !Sub integrations/${SessionsIntegration}
 
-  SessionsGetRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: GET /sessions/{sessionId}
-      Target: !Sub integrations/${SessionsIntegration}
-
-  SessionsPatchRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: PATCH /sessions/{sessionId}
-      Target: !Sub integrations/${SessionsIntegration}
-
-  SessionsCloseRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: POST /sessions/{sessionId}/close
-      Target: !Sub integrations/${SessionsIntegration}
-
-  SessionsClaimRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: POST /sessions/{sessionId}/reviews/claim
-      Target: !Sub integrations/${SessionsIntegration}
-
-  SessionsReviewRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: POST /sessions/{sessionId}/reviews
-      Target: !Sub integrations/${SessionsIntegration}
-
-  SessionsExportRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: GET /sessions/{sessionId}/export
-      Target: !Sub integrations/${SessionsIntegration}
-
   SessionsByCodeRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -444,71 +322,31 @@ Resources:
       RouteKey: GET /sessions/by-code/{accessCode}
       Target: !Sub integrations/${SessionsIntegration}
 
+  SessionsByCodeFinalizeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: POST /sessions/by-code/{accessCode}/finalize
+      Target: !Sub integrations/${SessionsIntegration}
+
+  SessionsByCodeVideosUploadUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: POST /sessions/by-code/{accessCode}/videos/upload-url
+      Target: !Sub integrations/${SessionsIntegration}
+
+  SessionsByCodeVideosRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /sessions/by-code/{accessCode}/videos
+      Target: !Sub integrations/${SessionsIntegration}
+
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
       ApiId: !Ref HttpApi
-      StageName: !Ref Env
-      AutoDeploy: true
-
-  # --- WebSocket API ---
-
-  WebSocketApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: !Sub ${Env}-chapterquest-ws
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: $request.body.action
-
-  WsConnectIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref WebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt WsConnectFunction.Arn
-
-  WsDisconnectIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref WebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt WsDisconnectFunction.Arn
-
-  WsMessageIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref WebSocketApi
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt WsMessageFunction.Arn
-
-  WsConnectRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteKey: $connect
-      AuthorizationType: NONE
-      Target: !Sub integrations/${WsConnectIntegration}
-
-  WsDisconnectRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteKey: $disconnect
-      AuthorizationType: NONE
-      Target: !Sub integrations/${WsDisconnectIntegration}
-
-  WsDefaultRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref WebSocketApi
-      RouteKey: $default
-      AuthorizationType: NONE
-      Target: !Sub integrations/${WsMessageIntegration}
-
-  WebSocketStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref WebSocketApi
       StageName: !Ref Env
       AutoDeploy: true
 
@@ -546,30 +384,6 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*/*
 
-  WsConnectLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WsConnectFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/*
-
-  WsDisconnectLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WsDisconnectFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/*
-
-  WsMessageLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref WsMessageFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*/*
-
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Condition: UseCustomDomain
@@ -592,13 +406,7 @@ Outputs:
     Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Env}
     Export:
       Name: !Sub ${Env}-chapterquest-api-endpoint
-  WebSocketEndpoint:
-    Value: !Sub wss://${WebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${Env}
-    Export:
-      Name: !Sub ${Env}-chapterquest-ws-endpoint
   HttpApiId:
     Value: !Ref HttpApi
-  WebSocketApiId:
-    Value: !Ref WebSocketApi
   HealthFunctionArn:
     Value: !GetAtt HealthFunction.Arn

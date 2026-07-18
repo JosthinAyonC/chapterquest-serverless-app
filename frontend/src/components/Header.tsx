@@ -2,13 +2,14 @@ import { useEffect, useId, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import EnvironmentBadge from './EnvironmentBadge';
+import MyReviewsModal from './roleplay/MyReviewsModal';
+import { useMyHostReviews } from '../hooks/useMyHostReviews';
 
 const navItems = [
   { to: '/', label: 'Home', end: true },
   { to: '/library', label: 'Library' },
   { to: '/guide', label: 'Guide' },
   { to: '/play', label: 'Play' },
-  { to: '/review', label: 'Review' },
 ];
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -23,8 +24,11 @@ function MenuIcon({ open }: { open: boolean }) {
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [myReviewsOpen, setMyReviewsOpen] = useState(false);
   const menuId = useId();
   const location = useLocation();
+  const { codes } = useMyHostReviews();
+  const showMyReviews = codes.length > 0;
 
   useEffect(() => {
     setMenuOpen(false);
@@ -40,12 +44,13 @@ export default function Header() {
       <div className="container header-inner">
         <div className="brand-group">
           <NavLink to="/" className="brand" end>
-            <span className="brand-mark" aria-hidden="true">
-              ◎
-            </span>
-            <span className="brand-text">
-              Lit<span>Circle</span>
-            </span>
+            <img
+              src="/litlecirclelogo.png"
+              alt="LitCircle"
+              className="brand-logo"
+              width={52}
+              height={52}
+            />
           </NavLink>
           <EnvironmentBadge />
         </div>
@@ -66,6 +71,15 @@ export default function Header() {
         </nav>
 
         <div className="header-cta desktop-only">
+          {showMyReviews ? (
+            <button
+              type="button"
+              className="btn btn--secondary btn--sm"
+              onClick={() => setMyReviewsOpen(true)}
+            >
+              My reviews
+            </button>
+          ) : null}
           <Link to="/guide" className="btn btn--primary btn--sm">
             Start your circle
           </Link>
@@ -122,6 +136,18 @@ export default function Header() {
                   </li>
                 ))}
               </ul>
+              {showMyReviews ? (
+                <button
+                  type="button"
+                  className="btn btn--secondary mobile-nav-cta"
+                  onClick={() => {
+                    setMyReviewsOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  My reviews
+                </button>
+              ) : null}
               <Link
                 to="/guide"
                 className="btn btn--primary mobile-nav-cta"
@@ -133,6 +159,8 @@ export default function Header() {
           </>
         )}
       </AnimatePresence>
+
+      <MyReviewsModal open={myReviewsOpen} onClose={() => setMyReviewsOpen(false)} />
     </header>
   );
 }

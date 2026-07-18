@@ -6,18 +6,16 @@ import {
   useReducer,
   type ReactNode,
 } from 'react';
-import type { Book } from '../mocks/books';
-import type { RoleId } from '../mocks/roles';
-import type { MockReview } from '../mocks/reviews';
-import { INITIAL_MOCK_REVIEWS } from '../mocks/reviews';
+import type { Book } from '../types/book';
+import type { RoleId } from '../types/role';
+import { getDevTimerSeconds } from '../lib/env';
 
 export type PlayPhase =
   | 'setup'
   | 'roulette'
   | 'confirmed'
   | 'timer'
-  | 'finished'
-  | 'review';
+  | 'finished';
 
 export interface Participant {
   name: string;
@@ -33,8 +31,8 @@ export interface PlaySessionState {
   durationMinutes: number;
   remainingSeconds: number;
   timerRunning: boolean;
+  readingPrepared: boolean;
   endedEarly: boolean;
-  reviews: MockReview[];
   rouletteSpinning: boolean;
 }
 
@@ -45,12 +43,11 @@ type Action =
   | { type: 'CONFIRM_ROSTER' }
   | { type: 'SELECT_BOOK'; book: Book }
   | { type: 'SET_DURATION'; minutes: number }
+  | { type: 'OPEN_READING' }
   | { type: 'START_TIMER' }
   | { type: 'TICK' }
   | { type: 'STOP_TIMER' }
   | { type: 'FINISH_EARLY' }
-  | { type: 'GO_TO_REVIEW' }
-  | { type: 'ADD_REVIEW'; review: MockReview }
   | { type: 'RESET' };
 
 const DEFAULT_DURATION = 40;
@@ -64,8 +61,8 @@ const initialState: PlaySessionState = {
   durationMinutes: DEFAULT_DURATION,
   remainingSeconds: DEFAULT_DURATION * 60,
   timerRunning: false,
+  readingPrepared: false,
   endedEarly: false,
-  reviews: [...INITIAL_MOCK_REVIEWS],
   rouletteSpinning: false,
 };
 
@@ -101,13 +98,21 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
         remainingSeconds: state.timerRunning ? state.remainingSeconds : seconds,
       };
     }
+    case 'OPEN_READING':
+      return {
+        ...state,
+        phase: 'timer',
+        readingPrepared: true,
+        timerRunning: false,
+        endedEarly: false,
+      };
     case 'START_TIMER':
       return {
         ...state,
         phase: 'timer',
         timerRunning: true,
         endedEarly: false,
-        remainingSeconds: state.durationMinutes * 60,
+        remainingSeconds: getDevTimerSeconds() ?? state.durationMinutes * 60,
       };
     case 'TICK':
       if (state.remainingSeconds <= 1) {
@@ -130,15 +135,8 @@ function reducer(state: PlaySessionState, action: Action): PlaySessionState {
         phase: 'finished',
         endedEarly: true,
       };
-    case 'GO_TO_REVIEW':
-      return { ...state, phase: 'review', timerRunning: false };
-    case 'ADD_REVIEW':
-      return { ...state, reviews: [...state.reviews, action.review] };
     case 'RESET':
-      return {
-        ...initialState,
-        reviews: [...INITIAL_MOCK_REVIEWS],
-      };
+      return { ...initialState };
     default:
       return state;
   }
@@ -152,12 +150,11 @@ interface PlaySessionContextValue extends PlaySessionState {
   confirmRoster: () => void;
   selectBook: (book: Book) => void;
   setDuration: (minutes: number) => void;
+  openReading: () => void;
   startTimer: () => void;
   tick: () => void;
   stopTimer: () => void;
   finishEarly: () => void;
-  goToReview: () => void;
-  addReview: (name: string, message: string) => void;
   resetSession: () => void;
 }
 
@@ -190,6 +187,10 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_DURATION', minutes });
   }, []);
 
+  const openReading = useCallback(() => {
+    dispatch({ type: 'OPEN_READING' });
+  }, []);
+
   const startTimer = useCallback(() => {
     dispatch({ type: 'START_TIMER' });
   }, []);
@@ -206,34 +207,13 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'FINISH_EARLY' });
   }, []);
 
-  const goToReview = useCallback(() => {
-    dispatch({ type: 'GO_TO_REVIEW' });
-  }, []);
-
-  const addReview = useCallback(
-    (name: string, message: string) => {
-      const participant = state.participants.find((p) => p.name === name);
-      if (!participant || !message.trim()) return;
-      dispatch({
-        type: 'ADD_REVIEW',
-        review: {
-          id: `review-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          participantName: name,
-          roleId: participant.roleId,
-          message: message.trim(),
-        },
-      });
-    },
-    [state.participants],
-  );
-
   const resetSession = useCallback(() => {
     dispatch({ type: 'RESET' });
   }, []);
 
   const hasActiveSession =
     state.participants.length > 0 &&
-    ['confirmed', 'timer', 'finished', 'review'].includes(state.phase);
+    ['confirmed', 'timer', 'finished'].includes(state.phase);
 
   const value = useMemo<PlaySessionContextValue>(
     () => ({
@@ -245,12 +225,11 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       confirmRoster,
       selectBook,
       setDuration,
+      openReading,
       startTimer,
       tick,
       stopTimer,
       finishEarly,
-      goToReview,
-      addReview,
       resetSession,
     }),
     [
@@ -262,12 +241,11 @@ export function PlaySessionProvider({ children }: { children: ReactNode }) {
       confirmRoster,
       selectBook,
       setDuration,
+      openReading,
       startTimer,
       tick,
       stopTimer,
       finishEarly,
-      goToReview,
-      addReview,
       resetSession,
     ],
   );
