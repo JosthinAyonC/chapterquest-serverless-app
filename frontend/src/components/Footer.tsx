@@ -8,7 +8,7 @@ export default function Footer() {
           LitCircle — <em>Every chapter is the beginning of a new adventure.</em>
         </p>
         <p className="footer-meta">
-          Powered by{' '}
+          Done for Danna Bailon and Malú Copiano & Powered by{' '}
           <a
             href="https://www.josthinayon.dev"
             target="_blank"

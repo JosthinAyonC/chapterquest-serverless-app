@@ -17,8 +17,8 @@ export default function LibraryPage() {
         <p className="eyebrow">Read</p>
         <h1>Library</h1>
         <p className="page-subtitle">
-          Curated books for your literary circle. Hover a card to preview the
-          summary — language tags help you pick the right read.
+          Curated books for your literary circle. Hover a card to read the full
+          summary — on mobile, tap &quot;Read full description&quot;.
         </p>
       </motion.header>
 

@@ -49,6 +49,31 @@ export default function GuidePage() {
       </motion.div>
 
       <motion.div
+        className="guide-pdf"
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        <a
+          href="/guide/TEACHERS_GUIDE.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="guide-pdf-link"
+        >
+          <span className="guide-pdf-label">Guía</span>
+          <div className="guide-pdf-text">
+            <h2>Teacher&apos;s methodological guide</h2>
+            <p>
+              Step-by-step instructions for running literary circles in the
+              classroom — roles, timing, and review activities.
+            </p>
+          </div>
+          <span className="guide-pdf-action">Open PDF</span>
+        </a>
+      </motion.div>
+
+      <motion.div
         className="guide-cta"
         variants={fadeUp}
         initial="hidden"

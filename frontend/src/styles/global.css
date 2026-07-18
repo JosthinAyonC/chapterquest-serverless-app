@@ -967,15 +967,87 @@ body.nav-open {
   flex-shrink: 0;
 }
 
-.book-card-back .book-card-summary {
+.book-card-summary-block {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.book-card-summary-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.book-card-summary-block--overflow .book-card-summary-viewport::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.25rem;
+  background: linear-gradient(to bottom, transparent, var(--color-surface-solid));
+  pointer-events: none;
+}
+
+.book-card-summary {
   margin: 0;
   color: var(--color-text-muted);
   font-size: 0.92rem;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 9;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+}
+
+.book-card-summary-block--overflow .book-card:hover .book-card-summary,
+.book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+  animation: book-summary-autoscroll 16s ease-in-out infinite;
+}
+
+@keyframes book-summary-autoscroll {
+  0%,
+  12% {
+    transform: translateY(0);
+  }
+  45%,
+  55% {
+    transform: translateY(var(--scroll-distance, 0));
+  }
+  88%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.book-card-summary-toggle {
+  display: none;
+  align-self: flex-start;
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.book-card-summary-toggle:hover {
+  color: var(--color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-card-summary-block--overflow .book-card:hover .book-card-summary,
+  .book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+    animation: none;
+  }
+
+  .book-card-summary-block--overflow .book-card-summary-viewport {
+    overflow-y: auto;
+  }
 }
 
 /* Role cards */
@@ -1045,6 +1117,82 @@ body.nav-open {
 .guide-cta {
   margin-top: 2rem;
   text-align: center;
+}
+
+.guide-pdf {
+  margin-top: 2rem;
+}
+
+.guide-pdf-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guide-pdf-link:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.guide-pdf-label {
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: rgba(184, 138, 44, 0.18);
+  color: var(--color-secondary);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-pdf-text {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.guide-pdf-text h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--color-primary);
+}
+
+.guide-pdf-text p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.guide-pdf-action {
+  flex-shrink: 0;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-on-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .guide-pdf-link {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .guide-pdf-action {
+    align-self: stretch;
+    text-align: center;
+  }
 }
 
 /* Play page */
@@ -1973,17 +2121,20 @@ body.book-reader-open {
   justify-content: center;
 }
 
-.malu-placeholder {
-  display: grid;
-  place-items: center;
-  min-height: 200px;
+.landing-banner {
+  margin-top: 2rem;
+  margin-bottom: 0;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(128, 0, 0, 0.08), rgba(184, 138, 44, 0.15));
-  border: 2px dashed var(--color-border);
-  color: var(--color-text-muted);
-  font-style: italic;
-  text-align: center;
-  padding: 2rem;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+
+.landing-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
 }
 
 /* Page transitions wrapper */
@@ -2077,10 +2228,32 @@ body.book-reader-open {
     backface-visibility: visible;
     margin-top: 0.5rem;
     border-radius: var(--radius);
+    min-height: 9.5rem;
   }
 
-  .book-card-back .book-card-summary {
-    -webkit-line-clamp: 5;
+  .book-card-summary-block--overflow .book-card:hover .book-card-summary,
+  .book-card-summary-block--overflow .book-card:focus-within .book-card-summary {
+    animation: none;
+    transform: none;
+  }
+
+  .book-card-summary-viewport {
+    flex: none;
+    max-height: 5.25rem;
+  }
+
+  .book-card-summary-block--expanded .book-card-summary-viewport {
+    max-height: 9.5rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .book-card-summary-block--expanded .book-card-summary-viewport::after {
+    opacity: 0;
+  }
+
+  .book-card-summary-toggle {
+    display: inline-flex;
   }
 
   .book-card-inner {

@@ -1,4 +1,5 @@
 import type { Book } from '../types/book';
+import BookCardSummary from './BookCardSummary';
 
 interface BookCardProps {
   book: Book;
@@ -43,7 +44,7 @@ export default function BookCard({ book }: BookCardProps) {
         <div className="book-card-face book-card-back">
           <h3>{book.title}</h3>
           <p className="book-card-author">{book.author}</p>
-          <p className="book-card-summary">{book.summary}</p>
+          <BookCardSummary text={book.summary} />
         </div>
       </div>
     </article>
