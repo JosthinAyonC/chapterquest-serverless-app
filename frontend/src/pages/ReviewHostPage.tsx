@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import Tabs from '../components/Tabs';
+import HostReviewBook, { type HostReviewBookPage } from '../components/roleplay/HostReviewBook';
 import { useHostReview } from '../context/HostReviewContext';
 import { usePlaySession } from '../context/PlaySessionContext';
 import RoleplayQrPanel from '../components/roleplay/RoleplayQrPanel';
@@ -37,7 +37,7 @@ export default function ReviewHostPage() {
   const [finalizedCount, setFinalizedCount] = useState(0);
   const [accessDenied, setAccessDenied] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(isRecoveryRoute);
-  const [activeTab, setActiveTab] = useState('instructions');
+  const [activeTab, setActiveTab] = useState<HostReviewBookPage>('instructions');
 
   useEffect(() => {
     if (!isRecoveryRoute) return;
@@ -141,40 +141,22 @@ export default function ReviewHostPage() {
 
   const playerUrl = buildRoleplayPlayerUrl(sessionCode);
 
-  const tabItems = useMemo(
-    () => [
-      {
-        id: 'instructions',
-        label: HOST_TAB_INSTRUCTIONS,
-        content: (
-          <aside className="roleplay-host-guide play-panel">
-            <h3>{ROLE_REVIEW_OBJECTIVE_TITLE}</h3>
-            <p className="roleplay-host-intro">{ROLE_REVIEW_OBJECTIVE}</p>
+  const instructionsContent = (
+    <>
+      <h3>{ROLE_REVIEW_OBJECTIVE_TITLE}</h3>
+      <p className="roleplay-host-intro">{ROLE_REVIEW_OBJECTIVE}</p>
 
-            <h3>How to join</h3>
-            <ol className="roleplay-host-steps">
-              {ROLEPLAY_HOST_STEPS.map((step) => (
-                <li key={step}>{step}</li>
-              ))}
-            </ol>
+      <h3>How to join</h3>
+      <ol className="roleplay-host-steps">
+        {ROLEPLAY_HOST_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
 
-            <p className="roleplay-host-progress">
-              Finished: <strong>{finalizedCount}</strong> / {rosterSize || 6}
-            </p>
-          </aside>
-        ),
-      },
-      {
-        id: 'videos',
-        label: HOST_TAB_VIDEOS,
-        content: (
-          <div className="roleplay-host-videos play-panel">
-            <VideoReviewsPanel sessionCode={sessionCode} />
-          </div>
-        ),
-      },
-    ],
-    [finalizedCount, rosterSize, sessionCode],
+      <p className="roleplay-host-progress">
+        Finished: <strong>{finalizedCount}</strong> / {rosterSize || 6}
+      </p>
+    </>
   );
 
   if (!isRecoveryRoute && !publishedRef.current) {
@@ -228,18 +210,17 @@ export default function ReviewHostPage() {
         <h1>Let&apos;s complete our reviews</h1>
       </motion.header>
 
-      <div className="roleplay-host-layout">
-        <RoleplayQrPanel url={playerUrl} code={sessionCode} />
-
-        <div className="roleplay-host-tabs-wrap">
-          <Tabs
-            items={tabItems}
-            activeId={activeTab}
-            onChange={setActiveTab}
-            ariaLabel="Host review sections"
-          />
-        </div>
-      </div>
+      <HostReviewBook
+        tabs={[
+          { id: 'instructions', label: HOST_TAB_INSTRUCTIONS },
+          { id: 'videos', label: HOST_TAB_VIDEOS },
+        ]}
+        activePage={activeTab}
+        onPageChange={setActiveTab}
+        joinPanel={<RoleplayQrPanel url={playerUrl} code={sessionCode} />}
+        instructions={instructionsContent}
+        videos={<VideoReviewsPanel sessionCode={sessionCode} />}
+      />
     </section>
   );
 }

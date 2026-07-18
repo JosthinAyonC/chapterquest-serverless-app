@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   COOKIE_BANNER_ACCEPT,
   COOKIE_BANNER_EXIT,
+  COOKIE_BANNER_TERMS_LINK,
   COOKIE_BANNER_TEXT,
 } from '../lib/roleplay/copy';
 import { acceptCookieConsent, hasCookieConsent } from '../lib/consent';
@@ -37,7 +38,7 @@ export default function CookieConsentBanner() {
           <p id="cookie-consent-title" className="cookie-consent-text">
             {COOKIE_BANNER_TEXT}{' '}
             <Link to="/terms" className="cookie-consent-link">
-              Terms and Conditions
+              {COOKIE_BANNER_TERMS_LINK}
             </Link>
             .
           </p>

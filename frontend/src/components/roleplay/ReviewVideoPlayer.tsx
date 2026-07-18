@@ -28,10 +28,12 @@ export default function ReviewVideoPlayer({ src, title }: ReviewVideoPlayerProps
         className="review-video-player-root"
         src={src}
         title={title}
-        crossOrigin
         playsInline
+        load="visible"
       >
-        <MediaOutlet />
+        <div className="review-video-player-viewport">
+          <MediaOutlet />
+        </div>
         <div className="review-video-player-controls">
           <div className="review-video-player-row review-video-player-row--top">
             <MediaTimeSlider className="review-video-time-slider" />

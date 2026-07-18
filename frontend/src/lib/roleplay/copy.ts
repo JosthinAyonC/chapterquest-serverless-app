@@ -26,6 +26,11 @@ export const UPLOAD_VIDEO_DROP_HINT =
 
 export const UPLOAD_VIDEO_FORMATS = 'Accepted formats: MP4, MOV, WebM · Max 200 MB';
 
+export const WORKSHEET_CONTINUE_BUTTON = 'Continue to next step';
+
+export const WORKSHEET_COMPLETE_NOTE =
+  'This worksheet has 2 pages. Complete both before printing or continuing.';
+
 export const UPLOAD_VIDEO_REQUIRED_MODAL_TITLE = 'Video required';
 
 export const UPLOAD_VIDEO_REQUIRED_MODAL_BODY =
@@ -57,7 +62,9 @@ export const LEGAL_PAGE_SECTIONS = [
 ] as const;
 
 export const COOKIE_BANNER_TEXT =
-  'LitCircle uses local storage to save your session progress. By continuing, you accept our Terms and Conditions.';
+  'We use cookies to improve your experience and keep your session running. By continuing, you agree to our';
+
+export const COOKIE_BANNER_TERMS_LINK = 'Terms and Conditions';
 
 export const COOKIE_BANNER_ACCEPT = 'Accept all cookies';
 

@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RoleId } from '../../types/role';
+import {
+  WORKSHEET_COMPLETE_NOTE,
+  WORKSHEET_CONTINUE_BUTTON,
+} from '../../lib/roleplay/copy';
 import { downloadReviewPdf, printReviewPdf } from '../../lib/roleplay/canvas-export';
 import {
   allPagesHaveContent,
@@ -184,8 +188,7 @@ export default function RoleplayEditor({
     <div className="roleplay-editor">
       <p className="roleplay-editor-note">
         Your answers save automatically in this browser. If you close the tab,
-        come back with the same link and name to continue. This worksheet has 2
-        pages — complete both before printing or finishing.
+        come back with the same link and name to continue. {WORKSHEET_COMPLETE_NOTE}
       </p>
 
       {storageError ? <p className="form-error">{storageError}</p> : null}
@@ -260,7 +263,7 @@ export default function RoleplayEditor({
           disabled={!editor.ready}
           onClick={handleFinalize}
         >
-          Finish review
+          {WORKSHEET_CONTINUE_BUTTON}
         </button>
       </div>
 
